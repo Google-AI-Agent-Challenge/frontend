@@ -13,6 +13,9 @@ export interface Message {
   createdAt?: Date;
   risingKeyword?: string;
   tags?: string[];
+  keywords?: string[];
+  matchedReviewIds?: string[];
+  reviewCount?: number;
 }
 
 // ----------------------------------------------------------------
@@ -87,4 +90,5 @@ export interface AiResponse {
   keywords: string[];
   risingKeyword?: string;
   tags?: string[];
+  matchedReviewIds?: string[];
 }

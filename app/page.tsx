@@ -13,12 +13,10 @@ import {
   fetchReviewsByKeywordsAction,
   fetchProductsAction,
   fetchReviewsByProductAction,
+  fetchReviewsByIdsAction,
 } from "./actions/data";
 
 // 순수 함수 (클라이언트 번들 크기 최적화 및 모듈 로드 에러 방지용 내장)
-function filterNegativeReviews(reviews: Review[]): Review[] {
-  return reviews.filter((r) => r.sentiment === "negative" || r.rating <= 2);
-}
 
 function calculateScores(reviews: Review[]): Score[] {
   const attributes = [
@@ -65,7 +63,7 @@ export default function DashboardPage() {
       try {
         const [prodData, reviewData] = await Promise.all([
           fetchProductsAction(),
-          fetchLatestReviewsAction(20),
+          fetchLatestReviewsAction(2000),
         ]);
         
         if (prodData.length > 0) setProducts(prodData);
@@ -95,6 +93,21 @@ export default function DashboardPage() {
     try {
       const aiResponse = await sendMessage(userInput);
 
+      let fetchedReviewCount = 0;
+      let filtered: Review[] = [];
+
+      if (aiResponse.matchedReviewIds && aiResponse.matchedReviewIds.length > 0) {
+        filtered = await fetchReviewsByIdsAction(aiResponse.matchedReviewIds);
+      } else if (aiResponse.keywords && aiResponse.keywords.length > 0) {
+        filtered = await fetchReviewsByKeywordsAction(aiResponse.keywords, 2000);
+      }
+
+      if (filtered.length > 0) {
+        setReviews(filtered);
+        setScores(calculateScores(filtered));
+        fetchedReviewCount = filtered.length;
+      }
+
       setMessages((prev) => [
         ...prev,
         {
@@ -103,14 +116,11 @@ export default function DashboardPage() {
           createdAt: new Date(),
           risingKeyword: aiResponse.risingKeyword,
           tags: aiResponse.tags,
+          keywords: aiResponse.keywords,
+          matchedReviewIds: aiResponse.matchedReviewIds,
+          reviewCount: fetchedReviewCount,
         },
       ]);
-
-      if (aiResponse.keywords && aiResponse.keywords.length > 0) {
-        const filtered = await fetchReviewsByKeywordsAction(aiResponse.keywords, 20);
-        setReviews(filtered);
-        setScores(filtered.length > 0 ? calculateScores(filtered) : DEFAULT_SCORES);
-      }
     } catch (err: any) {
       setPageError("채팅 전송 오류: " + err.message);
       setMessages((prev) => [
@@ -126,12 +136,58 @@ export default function DashboardPage() {
     }
   };
 
+  // 리뷰 엑셀(CSV) 다운로드 핸들러
+  const handleExportExcel = async (msg: Message) => {
+    try {
+      setIsLoading(true);
+      let exportReviews: Review[] = reviews;
+
+      if (msg.matchedReviewIds && msg.matchedReviewIds.length > 0) {
+        exportReviews = await fetchReviewsByIdsAction(msg.matchedReviewIds);
+      } else if (msg.keywords && msg.keywords.length > 0) {
+        exportReviews = await fetchReviewsByKeywordsAction(msg.keywords, 100);
+      }
+      
+      if (exportReviews.length === 0) {
+        alert("출력할 리뷰가 없습니다.");
+        return;
+      }
+
+      // CSV 생성 (BOM 추가로 엑셀에서 한글 깨짐 방지)
+      const header = ["제품명", "작성자", "별점", "작성일", "감성", "이슈타입", "리뷰내용"];
+      const rows = exportReviews.map((r: Review) => [
+        r.products?.product_name || "-",
+        r.reviewer_type || "-",
+        r.rating,
+        r.review_date,
+        r.sentiment,
+        r.issue_type || "-",
+        `"${(r.review_text || "").replace(/"/g, '""').replace(/\n/g, ' ')}"`
+      ]);
+
+      const csvContent = "\uFEFF" + [header, ...rows].map(e => e.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `tones_reviews_${new Date().getTime()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err: any) {
+      setPageError("엑셀 다운로드 중 오류 발생: " + err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // 패드 선택 핸들러
   const handlePadSelect = async (product: Product) => {
     setIsLoading(true);
     setPageError(null);
     try {
-      const productReviews = await fetchReviewsByProductAction(product.id, 20);
+      const productReviews = await fetchReviewsByProductAction(product.id, 2000);
       setReviews(productReviews);
       setScores(productReviews.length > 0 ? calculateScores(productReviews) : DEFAULT_SCORES);
     } catch (err: any) {
@@ -165,9 +221,14 @@ export default function DashboardPage() {
       )}
 
       <Sidebar />
-      <ChatPanel messages={messages} isLoading={isLoading} onSend={handleSend} />
+      <ChatPanel 
+        messages={messages} 
+        isLoading={isLoading} 
+        onSend={handleSend} 
+        onExportExcel={handleExportExcel} 
+      />
       <AnalyticsPanel
-        reviews={filterNegativeReviews(reviews)}
+        reviews={reviews}
         scores={scores}
         products={products}
         isLoading={isLoading}

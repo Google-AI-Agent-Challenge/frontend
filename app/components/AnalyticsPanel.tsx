@@ -210,17 +210,27 @@ export default function AnalyticsPanel({
   onPadSelect,
 }: AnalyticsPanelProps) {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
-    products[0]?.id ?? null,
+    null,
   );
 
-  useEffect(() => {
-    if (products.length > 0 && !selectedProductId) {
-      setSelectedProductId(products[0].id);
-    }
-  }, [products, selectedProductId]);
+  // 초기 렌더링 시 자동으로 첫 번째 패드를 선택하던 로직 제거
+  // (전체 리뷰 모드일 때는 '제품: 전체' 로 표시되도록 함)
+
+  const [sentimentFilter, setSentimentFilter] = useState<
+    "all" | "positive" | "neutral" | "negative"
+  >("all");
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
 
   const selectedProduct = products.find((p) => p.id === selectedProductId);
-  const negativeReviews = reviews;
+
+  const filteredReviews = reviews.filter((r) => {
+    if (sentimentFilter === "all") return true;
+    return r.sentiment === sentimentFilter;
+  });
+
+  const visibleReviews = isExpanded
+    ? filteredReviews
+    : filteredReviews.slice(0, 5);
 
   const handlePadClick = (product: Product) => {
     setSelectedProductId(product.id);
@@ -231,8 +241,8 @@ export default function AnalyticsPanel({
     <div
       className="flex flex-col h-full overflow-y-auto"
       style={{
-        width: "340px",
-        minWidth: "340px",
+        flex: 1.2,
+        minWidth: "480px",
         background: "#121214",
         borderLeft: "1px solid #2a2a2e",
       }}
@@ -240,8 +250,7 @@ export default function AnalyticsPanel({
       {/* ---- 인사이트 알림 헤더 ---- */}
       <div
         style={{
-          background: "#f9a2c0",
-          padding: "13px 18px",
+          padding: "20px 24px",
           display: "flex",
           alignItems: "center",
           gap: "8px",
@@ -250,9 +259,9 @@ export default function AnalyticsPanel({
       >
         <span
           style={{
-            color: "#1a1a1f",
-            fontWeight: 700,
-            fontSize: "13.5px",
+            color: "#ffffff",
+            fontWeight: 500,
+            fontSize: "16px",
             letterSpacing: "0.3px",
           }}
         >
@@ -324,42 +333,94 @@ export default function AnalyticsPanel({
         </div>
       </div>
 
-      {/* ---- 부정 트러블 리뷰 헤더 ---- */}
+      {/* ---- 리뷰 필터 및 개수 헤더 ---- */}
       <div
         style={{
           display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+          flexDirection: "column",
+          gap: "12px",
           padding: "20px 16px 10px 16px",
           flexShrink: 0,
         }}
       >
-        <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
-          <span style={{ fontSize: "24px", fontWeight: 700, color: "#e8e8ec" }}>
-            {isLoading ? "..." : negativeReviews.length}
-          </span>
-          <span style={{ fontSize: "13px", fontWeight: 600, color: "#e8e8ec" }}>
-            부정 트러블 리뷰
-          </span>
-        </div>
-        <span
+        <div
           style={{
-            background: "#2a1820",
-            border: "1px solid #FF5E8440",
-            color: "#FF5E84",
-            fontSize: "11px",
-            padding: "3px 8px",
-            borderRadius: "6px",
-            maxWidth: "120px",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
           }}
         >
-          {selectedProduct
-            ? `필터: ${selectedProduct.product_name}`
-            : "필터: 전체"}
-        </span>
+          <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
+            <span
+              style={{ fontSize: "24px", fontWeight: 700, color: "#e8e8ec" }}
+            >
+              {isLoading ? "..." : filteredReviews.length}
+            </span>
+            <span
+              style={{ fontSize: "13px", fontWeight: 600, color: "#e8e8ec" }}
+            >
+              {sentimentFilter === "all"
+                ? "전체 리뷰"
+                : sentimentFilter === "positive"
+                  ? "긍정 리뷰"
+                  : sentimentFilter === "neutral"
+                    ? "중립 리뷰"
+                    : "부정 리뷰"}
+            </span>
+          </div>
+          <span
+            style={{
+              background: "#2a1820",
+              border: "1px solid #FF5E8440",
+              color: "#FF5E84",
+              fontSize: "11px",
+              padding: "3px 8px",
+              borderRadius: "6px",
+              maxWidth: "120px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {selectedProduct
+              ? `제품: ${selectedProduct.product_name}`
+              : "제품: 전체"}
+          </span>
+        </div>
+
+        {/* 필터 칩 */}
+        <div style={{ display: "flex", gap: "6px" }}>
+          {[
+            { id: "all", label: "전체" },
+            { id: "positive", label: "긍정" },
+            { id: "neutral", label: "중립" },
+            { id: "negative", label: "부정" },
+          ].map((f) => (
+            <button
+              key={f.id}
+              onClick={() =>
+                setSentimentFilter(
+                  f.id as "all" | "positive" | "neutral" | "negative",
+                )
+              }
+              style={{
+                flex: 1,
+                padding: "6px 0",
+                fontSize: "11px",
+                fontWeight: 600,
+                color: sentimentFilter === f.id ? "#fff" : "#9999aa",
+                background:
+                  sentimentFilter === f.id ? "#FF5E84" : "transparent",
+                border: `1px solid ${sentimentFilter === f.id ? "#FF5E84" : "#2a2a2e"}`,
+                borderRadius: "6px",
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ---- 리뷰 카드 목록 ---- */}
@@ -387,7 +448,7 @@ export default function AnalyticsPanel({
             />
           ))}
 
-        {!isLoading && negativeReviews.length === 0 && (
+        {!isLoading && filteredReviews.length === 0 && (
           <div
             style={{
               padding: "24px",
@@ -404,7 +465,7 @@ export default function AnalyticsPanel({
         )}
 
         {!isLoading &&
-          negativeReviews.slice(0, 5).map((review) => {
+          visibleReviews.map((review) => {
             const product = review.products;
             return (
               <div
@@ -539,33 +600,36 @@ export default function AnalyticsPanel({
       </div>
 
       {/* ---- 리뷰 더보기 버튼 ---- */}
-      <div style={{ padding: "14px 16px", flexShrink: 0 }}>
-        <button
-          style={{
-            width: "100%",
-            padding: "10px",
-            background: "none",
-            border: "1px solid #2a2a2e",
-            borderRadius: "8px",
-            color: "#9999aa",
-            fontSize: "13px",
-            cursor: "pointer",
-            transition: "all 0.15s ease",
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.color = "#e8e8ec";
-            (e.currentTarget as HTMLButtonElement).style.borderColor =
-              "#FF5E84";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.color = "#9999aa";
-            (e.currentTarget as HTMLButtonElement).style.borderColor =
-              "#2a2a2e";
-          }}
-        >
-          리뷰 더보기
-        </button>
-      </div>
+      {filteredReviews.length > 5 && (
+        <div style={{ padding: "14px 16px", flexShrink: 0 }}>
+          <button
+            style={{
+              width: "100%",
+              padding: "10px",
+              background: "none",
+              border: "1px solid #2a2a2e",
+              borderRadius: "8px",
+              color: "#9999aa",
+              fontSize: "13px",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+            onClick={() => setIsExpanded(!isExpanded)}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.color = "#e8e8ec";
+              (e.currentTarget as HTMLButtonElement).style.borderColor =
+                "#FF5E84";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.color = "#9999aa";
+              (e.currentTarget as HTMLButtonElement).style.borderColor =
+                "#2a2a2e";
+            }}
+          >
+            {isExpanded ? "접기" : "리뷰 더보기"}
+          </button>
+        </div>
+      )}
 
       {/* ---- 패드 레시피 라인업 (DB products 기반 동적 렌더링) ---- */}
       <div style={{ padding: "0 16px 20px 16px", flexShrink: 0 }}>
@@ -617,12 +681,28 @@ export default function AnalyticsPanel({
                       gap: "8px", // 가로 세로 밸런스를 위해 8px로 소폭 조정
                       padding: "12px 4px",
                       borderRadius: "10px",
-                      background: style.bg,
+                      background: "#1a1a1f", // 하나로 예쁘게 통일된 배경색
                       border: isActive
                         ? `1px solid ${style.activeColor}`
                         : "1px solid #2a2a2e",
                       cursor: "pointer",
-                      transition: "all 0.15s ease",
+                      transition: "all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1)", // 더 부드럽고 텐션 있는 애니메이션
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-3px) scale(1.02)";
+                      (e.currentTarget as HTMLButtonElement).style.background = "#24242a";
+                      (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 16px rgba(0, 0, 0, 0.4)";
+                      if (!isActive) {
+                        (e.currentTarget as HTMLButtonElement).style.borderColor = "#4a4a55";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0) scale(1)";
+                      (e.currentTarget as HTMLButtonElement).style.background = "#1a1a1f";
+                      (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
+                      if (!isActive) {
+                        (e.currentTarget as HTMLButtonElement).style.borderColor = "#2a2a2e";
+                      }
                     }}
                   >
                     {/* ⭐️ 이모지 대신 Next.js <Image /> 컴포넌트로 렌더링 */}
@@ -641,14 +721,18 @@ export default function AnalyticsPanel({
                         alt={product.product_name}
                         width={32}
                         height={32}
-                        style={{ objectFit: "contain" }} // 이미지 비율 유지
+                        style={{
+                          objectFit: "contain",
+                          width: "100%",
+                          height: "auto",
+                        }} // 이미지 비율 유지 및 Next.js 경고 방지
                       />
                     </div>
 
                     <span
                       style={{
                         fontSize: "11px",
-                        color: isActive ? style.activeColor : "#9999aa",
+                        color: "#ffffff", // 모든 글자를 흰색으로 통일
                         fontWeight: isActive ? 600 : 400,
                         textAlign: "center",
                         lineHeight: "1.3",

@@ -45,16 +45,28 @@ export async function fetchProductsAction(): Promise<Product[]> {
 // ──────────────────────────────────────────────────────────
 export async function fetchLatestReviewsAction(limit = 20): Promise<Review[]> {
   const supabase = getSupabase();
-  const { data, error } = await supabase
-    .from("reviews")
-    .select(REVIEW_SELECT)
-    .order("review_date", { ascending: false })
-    .limit(limit);
+  let allData: any[] = [];
+  let offset = 0;
+  const step = 1000;
 
-  if (error) {
-    throw new Error("[fetchLatestReviewsAction] " + error.message);
+  while (allData.length < limit) {
+    const fetchCount = Math.min(step, limit - allData.length);
+    const { data, error } = await supabase
+      .from("reviews")
+      .select(REVIEW_SELECT)
+      .order("review_date", { ascending: false })
+      .range(offset, offset + fetchCount - 1);
+
+    if (error) {
+      throw new Error("[fetchLatestReviewsAction] " + error.message);
+    }
+    if (!data || data.length === 0) break;
+
+    allData = allData.concat(data);
+    offset += fetchCount;
   }
-  return (data as unknown as Review[]) ?? [];
+
+  return (allData as unknown as Review[]) ?? [];
 }
 
 // ──────────────────────────────────────────────────────────
@@ -71,15 +83,50 @@ export async function fetchReviewsByKeywordsAction(
   const supabase = getSupabase();
   const orFilter = keywords.map((kw) => `review_text.ilike.%${kw}%`).join(",");
 
+  let allData: any[] = [];
+  let offset = 0;
+  const step = 1000;
+
+  while (allData.length < limit) {
+    const fetchCount = Math.min(step, limit - allData.length);
+    const { data, error } = await supabase
+      .from("reviews")
+      .select(REVIEW_SELECT)
+      .or(orFilter)
+      .order("review_date", { ascending: false })
+      .range(offset, offset + fetchCount - 1);
+
+    if (error) {
+      throw new Error("[fetchReviewsByKeywordsAction] " + error.message);
+    }
+    if (!data || data.length === 0) break;
+
+    allData = allData.concat(data);
+    offset += fetchCount;
+  }
+
+  return (allData as unknown as Review[]) ?? [];
+}
+
+// ──────────────────────────────────────────────────────────
+// ID 배열 기반 리뷰 검색
+// ──────────────────────────────────────────────────────────
+export async function fetchReviewsByIdsAction(
+  ids: string[]
+): Promise<Review[]> {
+  if (!ids || ids.length === 0) {
+    return [];
+  }
+
+  const supabase = getSupabase();
   const { data, error } = await supabase
     .from("reviews")
     .select(REVIEW_SELECT)
-    .or(orFilter)
-    .order("review_date", { ascending: false })
-    .limit(limit);
+    .in("id", ids)
+    .order("review_date", { ascending: false });
 
   if (error) {
-    throw new Error("[fetchReviewsByKeywordsAction] " + error.message);
+    throw new Error("[fetchReviewsByIdsAction] " + error.message);
   }
   return (data as unknown as Review[]) ?? [];
 }
@@ -92,16 +139,29 @@ export async function fetchReviewsByProductAction(
   limit = 20
 ): Promise<Review[]> {
   const supabase = getSupabase();
-  const { data, error } = await supabase
-    .from("reviews")
-    .select(REVIEW_SELECT)
-    .eq("product_id", productId)
-    .order("review_date", { ascending: false })
-    .limit(limit);
+  
+  let allData: any[] = [];
+  let offset = 0;
+  const step = 1000;
 
-  if (error) {
-    throw new Error("[fetchReviewsByProductAction] " + error.message);
+  while (allData.length < limit) {
+    const fetchCount = Math.min(step, limit - allData.length);
+    const { data, error } = await supabase
+      .from("reviews")
+      .select(REVIEW_SELECT)
+      .eq("product_id", productId)
+      .order("review_date", { ascending: false })
+      .range(offset, offset + fetchCount - 1);
+
+    if (error) {
+      throw new Error("[fetchReviewsByProductAction] " + error.message);
+    }
+    if (!data || data.length === 0) break;
+
+    allData = allData.concat(data);
+    offset += fetchCount;
   }
-  return (data as unknown as Review[]) ?? [];
+
+  return (allData as unknown as Review[]) ?? [];
 }
 

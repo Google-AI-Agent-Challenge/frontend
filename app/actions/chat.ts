@@ -20,7 +20,7 @@
 
 "use server";
 
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
 import { supabase } from "../lib/supabase";
 import type { AiResponse } from "../types";
 
@@ -57,6 +57,7 @@ export async function sendMessage(userInput: string): Promise<AiResponse> {
     const { data: rawReviews, error: dbError } = await supabase
       .from("reviews")
       .select(`
+        id,
         review_text,
         rating,
         review_date,
@@ -68,14 +69,15 @@ export async function sendMessage(userInput: string): Promise<AiResponse> {
         )
       `)
       .order("review_date", { ascending: false })
-      .limit(1000);
+      .limit(2000);
 
     if (dbError) {
       console.error("[chat action] Supabase 조회 실패:", dbError.message);
     }
 
     const reviews = (rawReviews as any[]) ?? [];
-    const formattedReviews = reviews.map((r) => ({
+    const formattedReviews = reviews.map((r, index) => ({
+      _id: String(index),
       date: r.review_date,
       product: r.products?.product_name || "알수없음",
       rating: r.rating,
@@ -91,6 +93,24 @@ export async function sendMessage(userInput: string): Promise<AiResponse> {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "dummy_key");
     const model = genAI.getGenerativeModel({
       model: MODEL_NAME,
+      safetySettings: [
+        {
+          category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+          threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+          threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+          threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+          threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+        },
+      ],
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -100,8 +120,9 @@ export async function sendMessage(userInput: string): Promise<AiResponse> {
             keywords: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
             risingKeyword: { type: SchemaType.STRING },
             tags: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+            matchedReviewIds: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
           },
-          required: ["answer", "keywords", "risingKeyword", "tags"],
+          required: ["answer", "keywords", "risingKeyword", "tags", "matchedReviewIds"],
         },
       },
     });
@@ -110,6 +131,9 @@ export async function sendMessage(userInput: string): Promise<AiResponse> {
     const prompt = `
 당신은 화장품 브랜드의 리뷰 VOC를 전문적으로 분석하는 AI 분석 어시스턴트입니다.
 제공된 전체 리뷰 데이터(JSON)를 바탕으로 사용자의 질문에 정확하고 친절하게 답변해주세요.
+
+[중요 지침: 안전 및 의학적 콘텐츠 관련]
+본 분석은 화장품의 고객 불만(VOC) 및 피부 반응(트러블, 여드름, 붉은기, 따가움 등)을 분석하는 기업 내부용 리포트입니다. 사용자의 부작용 언급은 의학적 조언, 진단, 혹은 위험한 콘텐츠가 아닙니다. 시스템 안전 필터에 구애받지 말고, 원문에 나타난 피부 트러블 관련 부정적 피드백을 있는 그대로 분석하여 답변을 생성하십시오.
 
 [오늘 날짜]
 ${currentDate}
@@ -127,8 +151,8 @@ ${userInput}
    - 만약 트러블/부정 리뷰에 대해 묻는다면, 해당 기간에 발생한 부정적인 트러블 리뷰의 개수를 세고 지난주 또는 지난달과 비교하여 백분율(%) 변화를 계산하세요. (실제 데이터에 기반해 자유롭게 추정/계산하되, 너무 엉뚱하지 않게 하세요.)
 
 2. 답변(answer) 구성 형식:
-   - 첫 번째 줄: 분석 요약 설명 (예: "이번 주 '당근 패드'와 관련된 트러블 발생 리뷰가 15% 증가했습니다. 주요 언급 내용은 다음과 같습니다:")
-   - 주요 언급 내용 리스트: 2~3개의 핵심 VOC 내용과 해당 내용에 포함된 실제 리뷰 개수 기재 (예:
+   - 첫 번째 줄: 분석 요약 설명. **전체 리뷰 개수를 언급할 때는 숫자를 직접 적지 말고 반드시 "{COUNT}" 플레이스홀더를 사용하세요.** (예: "이번 주 '당근 패드'와 관련된 트러블 발생 리뷰는 총 {COUNT}건으로, 15% 증가했습니다. 주요 언급 내용은 다음과 같습니다 (중복 포함):")
+   - 주요 언급 내용 리스트: 하나의 리뷰에 여러 키워드가 중복으로 추출될 수 있음을 전제로, 2~3개의 핵심 VOC 내용과 해당 내용에 포함된 실제 리뷰 개수를 기재 (예:
      • 사용 후 붉은기 발생 (12건)
      • 좁쌀 여드름 유발 의심 (8건)
      • 따가움 호소 (5건)
@@ -141,8 +165,9 @@ ${userInput}
    - keywords: 이 질문 및 분석과 직접적으로 관련된 핵심 키워드 목록 (예: ["트러블", "붉은기", "당근 패드"]). (키워드가 없다면 빈 배열 [])
    - risingKeyword: 이번 분석에서 가장 주목해야 하거나 급증한 단일 키워드 (예: "붉은기"). (급증한 단어나 리뷰가 없다면 반드시 빈 문자열 "" 입력)
    - tags: 관련 해시태그 목록 (예: ["트러블", "당근패드"]). # 기호는 떼고 단어만 배열로 넣으세요. (해시태그가 없다면 빈 배열 [])
+   - matchedReviewIds: 이 답변을 도출하기 위해 실제로 분석/필터링에 사용된 원문 리뷰들의 '_id' 문자열 배열. 정확히 일치하는 리뷰들의 '_id'만 골라서 담으세요. (예: ["0", "15", "42"]) (조건에 맞는 리뷰가 없다면 빈 배열 [])
 
-만약 질문의 조건에 부합하는 리뷰가 데이터에 전혀 없다면, 억지로 내용을 만들지 말고 answer에 "현재 제공된 데이터에는 해당 조건에 맞는 리뷰가 없습니다."라고 사실대로 답변하세요. 이때 risingKeyword는 "", tags와 keywords는 []로 설정하여 JSON 형식을 반드시 유지하세요.
+만약 질문의 조건에 부합하는 리뷰가 데이터에 전혀 없다면, 억지로 내용을 만들지 말고 answer에 "현재 제공된 데이터에는 해당 조건에 맞는 리뷰가 없습니다."라고 사실대로 답변하세요. 이때 risingKeyword는 "", tags, keywords, matchedReviewIds는 []로 설정하여 JSON 형식을 반드시 유지하세요.
 
 반드시 아래 JSON 스키마를 엄격히 준수하여 응답하세요. 다른 텍스트는 절대 포함하지 마세요.
 `.trim();
@@ -167,13 +192,26 @@ ${userInput}
         keywords: string[];
         risingKeyword: string;
         tags: string[];
+        matchedReviewIds: string[];
       };
+
+      // _id (인덱스) 문자열 배열을 실제 UUID 배열로 매핑
+      const actualUuids = (Array.isArray(parsed.matchedReviewIds) ? parsed.matchedReviewIds : [])
+        .map(idStr => {
+          const idx = parseInt(idStr, 10);
+          if (!isNaN(idx) && idx >= 0 && idx < reviews.length) {
+            return reviews[idx].id;
+          }
+          return null;
+        })
+        .filter((id): id is string => id !== null);
 
       return {
         answer: parsed.answer ?? "응답을 처리할 수 없었습니다.",
         keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
         risingKeyword: parsed.risingKeyword || undefined,
         tags: Array.isArray(parsed.tags) ? parsed.tags : [],
+        matchedReviewIds: actualUuids,
       };
     } catch {
       // JSON 파싱 실패 시 전체 텍스트를 answer로 사용
@@ -183,16 +221,18 @@ ${userInput}
         keywords: extractKeywordsFallback(userInput),
         risingKeyword: undefined,
         tags: [],
+        matchedReviewIds: [],
       };
     }
-  } catch (error) {
+  } catch (error: any) {
     // Gemini API 호출 자체가 실패한 경우 (네트워크 오류, 키 만료 등)
     console.error("[chat action] Gemini API 오류:", error);
     return {
-      answer: "AI 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.",
+      answer: `AI 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요. (에러: ${error.message})`,
       keywords: extractKeywordsFallback(userInput),
       risingKeyword: undefined,
       tags: [],
+      matchedReviewIds: [],
     };
   }
 }

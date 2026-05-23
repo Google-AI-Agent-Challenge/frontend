@@ -26,7 +26,7 @@ export default function Sidebar() {
       style={{
         width: "220px",
         minWidth: "220px",
-        background: "#121214",
+        background: "#1a1a1f",
         borderRight: "1px solid #2a2a2e",
         padding: "28px 0 24px 0",
       }}
@@ -40,13 +40,11 @@ export default function Sidebar() {
           alignItems: "center",
         }}
       >
-        <div
-          style={{ display: "flex", alignItems: "center" }}
-        >
+        <div style={{ display: "flex", alignItems: "center" }}>
           <Image
             src="/logo.png" // public 폴더 기준 경로
             alt="브랜드 로고"
-            width={180}
+            width={130}
             height={20}
             priority // 화면에 가장 먼저 렌더링되도록 우선순위 부여
           />
@@ -86,7 +84,7 @@ export default function Sidebar() {
                   (e.currentTarget as HTMLButtonElement).style.color =
                     "#e8e8ec";
                   (e.currentTarget as HTMLButtonElement).style.background =
-                    "#1a1a1f";
+                    "#2a2a2e";
                 }
               }}
               onMouseLeave={(e) => {
@@ -134,7 +132,7 @@ export default function Sidebar() {
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLButtonElement).style.color = "#e8e8ec";
                 (e.currentTarget as HTMLButtonElement).style.background =
-                  "#1a1a1f";
+                  "#2a2a2e";
               }}
               onMouseLeave={(e) => {
                 (e.currentTarget as HTMLButtonElement).style.color = "#9999aa";

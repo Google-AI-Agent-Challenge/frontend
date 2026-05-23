@@ -43,6 +43,11 @@ interface ChatPanelProps {
    * @param text - 사용자 입력 텍스트
    */
   onSend: (text: string) => void;
+
+  /**
+   * 엑셀 다운로드 버튼 클릭 시 호출
+   */
+  onExportExcel?: (msg: Message) => void;
 }
 
 // ----------------------------------------------------------------
@@ -70,6 +75,7 @@ export default function ChatPanel({
   messages,
   isLoading,
   onSend,
+  onExportExcel,
 }: ChatPanelProps) {
   // 입력창 텍스트 상태 (이 컴포넌트 내부에서만 관리)
   const [inputValue, setInputValue] = useState("");
@@ -129,12 +135,7 @@ export default function ChatPanel({
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           {/* AI 아바타 아이콘 */}
 
-          <Image
-            src="/favicon.png" // public 폴더 안에 있는 이미지 이름으로 변경하세요! (예: /trend-icon.png)
-            alt="트렌드 아이콘"
-            width={35} // 기존 아이콘 사이즈(16)와 비슷하게 유지
-            height={35}
-          />
+          <Image src="/favicon.png" alt="AI아이콘" width={45} height={45} />
 
           <div>
             <div
@@ -178,6 +179,68 @@ export default function ChatPanel({
           gap: "16px",
         }}
       >
+        {/* ---- 상단 AI 브리핑 (사용자 요청 디자인) ---- */}
+        <div
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(50, 20, 30, 0.7) 0%, rgba(30, 15, 20, 0.9) 100%)",
+            border: "1px solid rgba(255, 94, 132, 0.4)",
+            borderRadius: "12px",
+            padding: "20px",
+            marginBottom: "8px",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              marginBottom: "12px",
+            }}
+          >
+            <span style={{ fontSize: "18px" }}>✨</span>
+            <span
+              style={{
+                color: "#ffffff",
+                fontWeight: "bold",
+                fontSize: "16px",
+                letterSpacing: "0.2px",
+              }}
+            >
+              AI Insight Briefing
+            </span>
+          </div>
+          <div
+            style={{
+              color: "#d2d2d8",
+              fontSize: "14px",
+              lineHeight: "1.65",
+              wordBreak: "keep-all",
+            }}
+          >
+            최근 30일간의 리뷰 분석 결과,{" "}
+            <span style={{ color: "#FF5E84", fontWeight: "600" }}>수분감</span>
+            과{" "}
+            <span style={{ color: "#FF5E84", fontWeight: "600" }}>
+              진정 효과
+            </span>
+            에 대한 긍정적인 언급이 85%를 차지합니다. 패드의{" "}
+            <span
+              style={{
+                background: "rgba(255, 255, 255, 0.12)",
+                padding: "2px 6px",
+                borderRadius: "6px",
+                color: "#e8e8ec",
+                fontWeight: "500",
+              }}
+            >
+              두께감
+            </span>
+            에 대한 만족도가 높으나, 일부 건성 피부 사용자들이 에센스 양 부족을
+            지적하고 있습니다.
+          </div>
+        </div>
         {/* 메시지가 없을 때 안내 메시지 */}
         {messages.length === 0 && !isLoading && (
           <div
@@ -222,40 +285,103 @@ export default function ChatPanel({
               {/* 사용자 메시지는 그대로, AI 메시지는 하이라이트 처리 */}
               {msg.role === "ai" ? (
                 <>
-                  <AiMessageContent content={msg.content} />
+                  {(() => {
+                    const displayContent = msg.content.replace(
+                      /\{COUNT\}/g,
+                      (msg.reviewCount || 0).toString(),
+                    );
+                    return <AiMessageContent content={displayContent} />;
+                  })()}
                   {(msg.risingKeyword || (msg.tags && msg.tags.length > 0)) && (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "8px",
+                        marginTop: "12px",
+                      }}
+                    >
                       {msg.risingKeyword && (
-                        <div style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "4.5px",
-                          background: "rgba(255, 94, 132, 0.1)",
-                          border: "1px solid #FF5E84",
-                          borderRadius: "20px",
-                          padding: "4px 10px",
-                          color: "#FF5E84",
-                          fontSize: "11px",
-                          fontWeight: 600,
-                        }}>
-                          <span style={{ display: "inline-flex", alignItems: "center" }}>⚠️</span>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4.5px",
+                            background: "rgba(255, 94, 132, 0.1)",
+                            border: "1px solid #FF5E84",
+                            borderRadius: "20px",
+                            padding: "4px 10px",
+                            color: "#FF5E84",
+                            fontSize: "11px",
+                            fontWeight: 600,
+                          }}
+                        >
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                            }}
+                          >
+                            ⚠️
+                          </span>
                           급상승 키워드: {msg.risingKeyword}
                         </div>
                       )}
                       {msg.tags?.map((tag, tIdx) => (
-                        <div key={tIdx} style={{
-                          background: "#2a2a2e",
-                          borderRadius: "20px",
-                          padding: "4.5px 11px",
-                          color: "#9999aa",
-                          fontSize: "11px",
-                          fontWeight: 500,
-                        }}>
+                        <div
+                          key={tIdx}
+                          style={{
+                            background: "#2a2a2e",
+                            borderRadius: "20px",
+                            padding: "4.5px 11px",
+                            color: "#9999aa",
+                            fontSize: "11px",
+                            fontWeight: 500,
+                          }}
+                        >
                           #{tag}
                         </div>
                       ))}
                     </div>
                   )}
+
+                  {msg.reviewCount && msg.reviewCount > 0 ? (
+                    <button
+                      onClick={() => {
+                        if (onExportExcel) onExportExcel(msg);
+                      }}
+                      style={{
+                        marginTop: "14px",
+                        padding: "8px 16px",
+                        background: "#2a151a",
+                        border: "1px solid #FF5E84",
+                        color: "#FF5E84",
+                        borderRadius: "6px",
+                        fontSize: "12px",
+                        cursor: "pointer",
+                        width: "100%",
+                        fontWeight: "600",
+                        transition: "all 0.2s",
+                      }}
+                      onMouseEnter={(e) => {
+                        (
+                          e.currentTarget as HTMLButtonElement
+                        ).style.background = "#FF5E84";
+                        (e.currentTarget as HTMLButtonElement).style.color =
+                          "#fff";
+                      }}
+                      onMouseLeave={(e) => {
+                        (
+                          e.currentTarget as HTMLButtonElement
+                        ).style.background = "#2a151a";
+                        (e.currentTarget as HTMLButtonElement).style.color =
+                          "#FF5E84";
+                      }}
+                    >
+                      📄 이 인사이트와 관련된 원문 리뷰 {msg.reviewCount}건
+                      확인하기 ➔
+                    </button>
+                  ) : null}
                 </>
               ) : (
                 <span style={{ color: "#e8e8ec" }}>{msg.content}</span>
@@ -434,22 +560,34 @@ const HIGHLIGHT_KEYWORDS = [
 ];
 
 function AiMessageContent({ content }: { content: string }) {
+  // AI가 생성한 문자열의 <br>, <br/> 등을 실제 줄바꿈(\n)으로 변환
+  const cleanContent = content.replace(/<br\s*\/?>/gi, "\n");
+  // 줄바꿈 기준으로 텍스트 분할
+  const lines = cleanContent.split("\n");
+
   // 키워드를 찾아 강조 처리
-  // 정규식으로 키워드를 분리한 뒤 span으로 감쌉니다.
   const regex = new RegExp(`(${HIGHLIGHT_KEYWORDS.join("|")})`, "g");
-  const parts = content.split(regex);
 
   return (
-    <span style={{ color: "#e8e8ec" }}>
-      {parts.map((part, i) =>
-        HIGHLIGHT_KEYWORDS.includes(part) ? (
-          <span key={i} style={{ color: "#FF5E84", fontWeight: 600 }}>
-            {part}
-          </span>
-        ) : (
-          part
-        ),
-      )}
-    </span>
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px", color: "#e8e8ec" }}>
+      {lines.map((line, lineIdx) => {
+        if (!line.trim()) return null; // 빈 줄은 무시 (gap으로 충분히 여백이 생김)
+        
+        const parts = line.split(regex);
+        return (
+          <div key={lineIdx} style={{ lineHeight: "1.7", wordBreak: "keep-all" }}>
+            {parts.map((part, i) =>
+              HIGHLIGHT_KEYWORDS.includes(part) ? (
+                <span key={i} style={{ color: "#FF5E84", fontWeight: 600 }}>
+                  {part}
+                </span>
+              ) : (
+                part
+              ),
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
 }
