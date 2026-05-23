@@ -11,6 +11,8 @@ export interface Message {
   role: "user" | "ai";
   content: string;
   createdAt?: Date;
+  risingKeyword?: string;
+  tags?: string[];
 }
 
 // ----------------------------------------------------------------
@@ -83,4 +85,6 @@ export interface Score {
 export interface AiResponse {
   answer: string;
   keywords: string[];
+  risingKeyword?: string;
+  tags?: string[];
 }

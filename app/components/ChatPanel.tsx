@@ -221,7 +221,42 @@ export default function ChatPanel({
             >
               {/* 사용자 메시지는 그대로, AI 메시지는 하이라이트 처리 */}
               {msg.role === "ai" ? (
-                <AiMessageContent content={msg.content} />
+                <>
+                  <AiMessageContent content={msg.content} />
+                  {(msg.risingKeyword || (msg.tags && msg.tags.length > 0)) && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }}>
+                      {msg.risingKeyword && (
+                        <div style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4.5px",
+                          background: "rgba(255, 94, 132, 0.1)",
+                          border: "1px solid #FF5E84",
+                          borderRadius: "20px",
+                          padding: "4px 10px",
+                          color: "#FF5E84",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                        }}>
+                          <span style={{ display: "inline-flex", alignItems: "center" }}>⚠️</span>
+                          급상승 키워드: {msg.risingKeyword}
+                        </div>
+                      )}
+                      {msg.tags?.map((tag, tIdx) => (
+                        <div key={tIdx} style={{
+                          background: "#2a2a2e",
+                          borderRadius: "20px",
+                          padding: "4.5px 11px",
+                          color: "#9999aa",
+                          fontSize: "11px",
+                          fontWeight: 500,
+                        }}>
+                          #{tag}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
               ) : (
                 <span style={{ color: "#e8e8ec" }}>{msg.content}</span>
               )}

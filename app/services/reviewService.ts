@@ -79,7 +79,7 @@ export async function fetchReviewsByKeywords(
     return [];
   }
 
-  return (data as Review[]) ?? [];
+  return (data as unknown as Review[]) ?? [];
 }
 
 // ----------------------------------------------------------------
@@ -104,7 +104,7 @@ export async function fetchLatestReviews(limit: number = 20): Promise<Review[]> 
     return [];
   }
 
-  return (data as Review[]) ?? [];
+  return (data as unknown as Review[]) ?? [];
 }
 
 // ----------------------------------------------------------------
@@ -165,7 +165,7 @@ export async function fetchReviewsByProduct(
     return [];
   }
 
-  return (data as Review[]) ?? [];
+  return (data as unknown as Review[]) ?? [];
 }
 
 // ----------------------------------------------------------------

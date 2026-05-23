@@ -54,7 +54,7 @@ export async function fetchLatestReviewsAction(limit = 20): Promise<Review[]> {
   if (error) {
     throw new Error("[fetchLatestReviewsAction] " + error.message);
   }
-  return (data as Review[]) ?? [];
+  return (data as unknown as Review[]) ?? [];
 }
 
 // ──────────────────────────────────────────────────────────
@@ -81,7 +81,7 @@ export async function fetchReviewsByKeywordsAction(
   if (error) {
     throw new Error("[fetchReviewsByKeywordsAction] " + error.message);
   }
-  return (data as Review[]) ?? [];
+  return (data as unknown as Review[]) ?? [];
 }
 
 // ──────────────────────────────────────────────────────────
@@ -102,6 +102,6 @@ export async function fetchReviewsByProductAction(
   if (error) {
     throw new Error("[fetchReviewsByProductAction] " + error.message);
   }
-  return (data as Review[]) ?? [];
+  return (data as unknown as Review[]) ?? [];
 }
 

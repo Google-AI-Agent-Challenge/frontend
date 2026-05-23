@@ -41,7 +41,7 @@ export default function Sidebar() {
         }}
       >
         <div
-          style={{ marginBottom: "4px", display: "flex", alignItems: "center" }}
+          style={{ display: "flex", alignItems: "center" }}
         >
           <Image
             src="/logo.png" // public 폴더 기준 경로
@@ -50,17 +50,6 @@ export default function Sidebar() {
             height={20}
             priority // 화면에 가장 먼저 렌더링되도록 우선순위 부여
           />
-        </div>
-        <div
-          style={{
-            fontSize: "11px",
-            color: "#ffffff",
-            letterSpacing: "0.5px",
-            display: "flex",
-            alignItems: "center",
-          }}
-        >
-          Precision Monitoring
         </div>
       </div>
 

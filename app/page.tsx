@@ -97,7 +97,13 @@ export default function DashboardPage() {
 
       setMessages((prev) => [
         ...prev,
-        { role: "ai", content: aiResponse.answer, createdAt: new Date() },
+        {
+          role: "ai",
+          content: aiResponse.answer,
+          createdAt: new Date(),
+          risingKeyword: aiResponse.risingKeyword,
+          tags: aiResponse.tags,
+        },
       ]);
 
       if (aiResponse.keywords && aiResponse.keywords.length > 0) {
