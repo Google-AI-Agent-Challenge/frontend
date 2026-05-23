@@ -105,42 +105,6 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Generate Insight Button */}
-      <div style={{ padding: "20px 12px 16px 12px" }}>
-        <button
-          style={{
-            width: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "8px",
-            padding: "11px 16px",
-            borderRadius: "8px",
-            border: "none",
-            background: "#FF5E84",
-            color: "#fff",
-            fontSize: "13.5px",
-            fontWeight: 600,
-            cursor: "pointer",
-            transition: "opacity 0.15s ease",
-          }}
-          onMouseEnter={(e) =>
-            ((e.currentTarget as HTMLButtonElement).style.opacity = "0.88")
-          }
-          onMouseLeave={(e) =>
-            ((e.currentTarget as HTMLButtonElement).style.opacity = "1")
-          }
-        >
-          <Sparkles size={15} />
-          인사이트 생성
-        </button>
-      </div>
-
-      {/* Divider */}
-      <div
-        style={{ borderTop: "1px solid #2a2a2e", margin: "0 12px 12px 12px" }}
-      />
-
       {/* Bottom Nav */}
       <div className="flex flex-col gap-1" style={{ padding: "0 12px" }}>
         {[

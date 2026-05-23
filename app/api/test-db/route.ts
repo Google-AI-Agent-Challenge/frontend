@@ -1,55 +1,76 @@
-/**
- * 진단용 API 라우트 — Supabase 연결 상태 확인
- * 브라우저에서 http://localhost:3000/api/test-db 로 접속하면
- * DB 연결 결과가 JSON으로 출력됩니다.
- */
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  // 1. 환경변수 존재 여부 확인
   if (!url || !key) {
     return NextResponse.json({
       status: "❌ 환경변수 누락",
       NEXT_PUBLIC_SUPABASE_URL: url ?? "없음",
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: key ? "존재함" : "없음 ← 이게 문제!",
-      solution: "서버를 Ctrl+C로 종료한 후 npm run dev 로 재시작하세요.",
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: key ? "존재함" : "없음",
     });
   }
 
-  // 2. Supabase 클라이언트 직접 생성 (서버 사이드)
   const supabase = createClient(url, key);
 
-  // 3. products 테이블 조회 시도
-  const { data: products, error: prodError } = await supabase
+  const { data: products } = await supabase
     .from("products")
-    .select("id, brand_name, product_name, category")
-    .limit(5);
+    .select("product_name");
 
-  // 4. reviews 테이블 조회 시도
-  const { data: reviews, error: reviewError } = await supabase
+  const { data: issueTypes } = await supabase
     .from("reviews")
-    .select("id, review_text, rating")
-    .limit(3);
+    .select("issue_type")
+    .not("issue_type", "is", null);
+
+  const { data: keywordsList } = await supabase
+    .from("reviews")
+    .select("keywords")
+    .not("keywords", "is", null);
+
+  const { count: totalReviews } = await supabase
+    .from("reviews")
+    .select("*", { count: "exact", head: true });
+
+  const prodStats: Record<string, number> = {};
+  const { data: reviewsWithProduct } = await supabase
+    .from("reviews")
+    .select("products(product_name)");
+  
+  if (reviewsWithProduct) {
+    reviewsWithProduct.forEach((r: any) => {
+      const pName = r.products?.product_name || "알수없음";
+      prodStats[pName] = (prodStats[pName] || 0) + 1;
+    });
+  }
+
+  const issueStats: Record<string, number> = {};
+  if (issueTypes) {
+    issueTypes.forEach((r) => {
+      if (r.issue_type) {
+        issueStats[r.issue_type] = (issueStats[r.issue_type] || 0) + 1;
+      }
+    });
+  }
+
+  const keywordStats: Record<string, number> = {};
+  if (keywordsList) {
+    keywordsList.forEach((r) => {
+      if (Array.isArray(r.keywords)) {
+        r.keywords.forEach((kw: string) => {
+          keywordStats[kw] = (keywordStats[kw] || 0) + 1;
+        });
+      }
+    });
+  }
 
   return NextResponse.json({
-    status: "연결 시도 완료",
-    env: {
-      url: url,
-      keyPrefix: key.substring(0, 20) + "...",
-    },
-    products: {
-      data: products,
-      count: products?.length ?? 0,
-      error: prodError?.message ?? null,
-    },
-    reviews: {
-      data: reviews,
-      count: reviews?.length ?? 0,
-      error: reviewError?.message ?? null,
-    },
+    totalReviews,
+    prodStats,
+    issueStats: Object.entries(issueStats).sort((a,b) => b[1]-a[1]).slice(0, 10),
+    keywordStats: Object.entries(keywordStats).sort((a,b) => b[1]-a[1]).slice(0, 20),
   });
 }
