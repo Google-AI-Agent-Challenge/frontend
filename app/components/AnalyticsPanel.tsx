@@ -219,7 +219,12 @@ export default function AnalyticsPanel({
   const [sentimentFilter, setSentimentFilter] = useState<
     "all" | "positive" | "neutral" | "negative"
   >("all");
-  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [visibleCount, setVisibleCount] = useState<number>(5);
+
+  // 필터가 변경되거나 제품이 변경될 때마다 보이는 개수 초기화
+  useEffect(() => {
+    setVisibleCount(5);
+  }, [sentimentFilter, selectedProductId, reviews]);
 
   const selectedProduct = products.find((p) => p.id === selectedProductId);
 
@@ -228,9 +233,7 @@ export default function AnalyticsPanel({
     return r.sentiment === sentimentFilter;
   });
 
-  const visibleReviews = isExpanded
-    ? filteredReviews
-    : filteredReviews.slice(0, 5);
+  const visibleReviews = filteredReviews.slice(0, visibleCount);
 
   const handlePadClick = (product: Product) => {
     setSelectedProductId(product.id);
@@ -600,7 +603,7 @@ export default function AnalyticsPanel({
       </div>
 
       {/* ---- 리뷰 더보기 버튼 ---- */}
-      {filteredReviews.length > 5 && (
+      {filteredReviews.length > visibleCount && (
         <div style={{ padding: "14px 16px", flexShrink: 0 }}>
           <button
             style={{
@@ -614,7 +617,7 @@ export default function AnalyticsPanel({
               cursor: "pointer",
               transition: "all 0.15s ease",
             }}
-            onClick={() => setIsExpanded(!isExpanded)}
+            onClick={() => setVisibleCount((prev) => prev + 5)}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLButtonElement).style.color = "#e8e8ec";
               (e.currentTarget as HTMLButtonElement).style.borderColor =
@@ -626,7 +629,7 @@ export default function AnalyticsPanel({
                 "#2a2a2e";
             }}
           >
-            {isExpanded ? "접기" : "리뷰 더보기"}
+            리뷰 5개 더보기 ({filteredReviews.length - visibleCount}개 남음)
           </button>
         </div>
       )}
