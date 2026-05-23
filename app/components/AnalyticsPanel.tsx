@@ -5,10 +5,8 @@
  * 우측 데이터 관제 패널 컴포넌트.
  *
  * 변경사항:
- *   - 패드 라인업: 하드코딩 → products[] props 기반 동적 렌더링
- *   - 리뷰 카드: products JOIN 데이터로 제품명 표시
- *   - 필터 뱃지: 선택된 제품의 product_name으로 표시
- *   - 패드 클릭 → onPadSelect 콜백으로 page.tsx에 알림
+ * - 패드 라인업: 이모지 → Next.js <Image /> 동적 렌더링 적용
+ * - 패드 이미지 경로: public/images/[제품명].png 매핑
  * ============================================================
  */
 
@@ -16,6 +14,7 @@
 
 import { useState, useEffect } from "react";
 import { ArrowUpRight, Star } from "lucide-react";
+import Image from "next/image"; // ⭐️ Image 컴포넌트 추가
 import type { Review, Score, Product } from "../types";
 
 // ----------------------------------------------------------------
@@ -24,38 +23,104 @@ import type { Review, Score, Product } from "../types";
 interface AnalyticsPanelProps {
   reviews: Review[];
   scores: Score[];
-  products: Product[]; // DB에서 가져온 제품 목록
+  products: Product[];
   isLoading?: boolean;
-  onPadSelect?: (product: Product) => void; // 패드 클릭 시 page.tsx에 알림
+  onPadSelect?: (product: Product) => void;
 }
 
 // ----------------------------------------------------------------
-// 제품명 기반 이모지 매핑 (product_name에 키워드가 포함되면 해당 이모지)
+// ⭐️ 제품명 기반 이미지 및 스타일 매핑 (이모지 대신 imgSrc 추가)
 // ----------------------------------------------------------------
-const EMOJI_MAP: {
+const PRODUCT_STYLE_MAP: {
   keyword: string;
-  emoji: string;
+  imgSrc: string; // ⭐️ 이미지 파일 경로
   bg: string;
   activeColor: string;
 }[] = [
-  { keyword: "당근", emoji: "🥕", bg: "#3a1820", activeColor: "#FF5E84" },
-  { keyword: "carrot", emoji: "🥕", bg: "#3a1820", activeColor: "#FF5E84" },
-  { keyword: "도토리", emoji: "🌰", bg: "#2a2520", activeColor: "#b07840" },
-  { keyword: "acorn", emoji: "🌰", bg: "#2a2520", activeColor: "#b07840" },
-  { keyword: "감자", emoji: "🥔", bg: "#28281e", activeColor: "#c8b060" },
-  { keyword: "potato", emoji: "🥔", bg: "#28281e", activeColor: "#c8b060" },
-  { keyword: "미나리", emoji: "🌿", bg: "#1e2820", activeColor: "#60a870" },
-  { keyword: "parsley", emoji: "🌿", bg: "#1e2820", activeColor: "#60a870" },
+  {
+    keyword: "당근",
+    imgSrc: "/images/carrot.png",
+    bg: "#3a1820",
+    activeColor: "#FF5E84",
+  },
+  {
+    keyword: "도토리",
+    imgSrc: "/images/acorn.png",
+    bg: "#2a2520",
+    activeColor: "#b07840",
+  },
+  {
+    keyword: "감자",
+    imgSrc: "/images/potato.png",
+    bg: "#28281e",
+    activeColor: "#c8b060",
+  },
+  {
+    keyword: "미나리",
+    imgSrc: "/images/parsley.png",
+    bg: "#1e2820",
+    activeColor: "#60a870",
+  },
+  {
+    keyword: "라이스",
+    imgSrc: "/images/rice.png",
+    bg: "#262624", // 어두운 웜그레이
+    activeColor: "#d4cbb3", // 부드러운 쌀겨/베이지색
+  },
+  {
+    keyword: "복숭아",
+    imgSrc: "/images/peach.png",
+    bg: "#2c1e22", // 어두운 핑크브라운
+    activeColor: "#ff99bb", // 화사한 피치 핑크
+  },
+  {
+    keyword: "레몬그라스",
+    imgSrc: "/images/niac.png",
+    bg: "#1a2622", // 어두운 청록/티트리 계열
+    activeColor: "#7accb5", // 산뜻한 민트/그린
+  },
+  {
+    keyword: "블루 캐모마일",
+    imgSrc: "/images/blue.png",
+    bg: "#18202c", // 어두운 네이비
+    activeColor: "#7fb2f0", // 부드러운 스카이블루
+  },
+  {
+    keyword: "샤인머스캣",
+    imgSrc: "/images/cica.png",
+    bg: "#1e261e", // 어두운 올리브
+    activeColor: "#90c95c", // 상큼한 연두색
+  },
+  {
+    keyword: "아스파라거스",
+    imgSrc: "/images/clut.png",
+    bg: "#20261c", // 어두운 뮤트 그린
+    activeColor: "#a6c478", // 차분한 라이트 그린
+  },
+  {
+    keyword: "핑크자몽",
+    imgSrc: "/images/aha.png",
+    bg: "#2c1c1c", // 어두운 적갈색
+    activeColor: "#ff8270", // 코랄/자몽 핑크
+  },
 ];
 
 /**
- * 제품명에서 이모지와 색상을 찾아 반환합니다.
- * 매칭되는 키워드가 없으면 기본값을 반환합니다.
+ * 제품명에서 매칭되는 이미지와 스타일셋을 반환합니다.
  */
 function getProductStyle(product: Product) {
   const name = product.product_name.toLowerCase();
-  const match = EMOJI_MAP.find((m) => name.includes(m.keyword.toLowerCase()));
-  return match ?? { emoji: "💊", bg: "#222228", activeColor: "#9999aa" };
+  const match = PRODUCT_STYLE_MAP.find((m) =>
+    name.includes(m.keyword.toLowerCase()),
+  );
+  // 매칭되는 게 없을 때 보여줄 기본 대체 이미지 설정
+  return (
+    match ?? {
+      imgSrc: "/images/default-pad.png",
+      bg: "#222228",
+      activeColor: "#9999aa",
+    }
+  );
 }
 
 // ----------------------------------------------------------------
@@ -144,28 +209,22 @@ export default function AnalyticsPanel({
   isLoading = false,
   onPadSelect,
 }: AnalyticsPanelProps) {
-  // 현재 선택된 제품 (첫 번째 제품이 기본 선택)
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
     products[0]?.id ?? null,
   );
 
-  // 비동기로 제품 목록이 로드되면 첫 번째 제품을 자동으로 기본 선택
   useEffect(() => {
     if (products.length > 0 && !selectedProductId) {
       setSelectedProductId(products[0].id);
     }
   }, [products, selectedProductId]);
 
-  // 선택된 제품 객체
   const selectedProduct = products.find((p) => p.id === selectedProductId);
-
-  // 부정 리뷰만 표시 (이미 page.tsx에서 필터됨)
   const negativeReviews = reviews;
 
-  // 패드 클릭 핸들러
   const handlePadClick = (product: Product) => {
     setSelectedProductId(product.id);
-    onPadSelect?.(product); // page.tsx에 선택 이벤트 전달
+    onPadSelect?.(product);
   };
 
   return (
@@ -283,7 +342,6 @@ export default function AnalyticsPanel({
             부정 트러블 리뷰
           </span>
         </div>
-        {/* 선택된 제품의 product_name을 필터 뱃지에 표시 */}
         <span
           style={{
             background: "#2a1820",
@@ -314,7 +372,6 @@ export default function AnalyticsPanel({
           flexShrink: 0,
         }}
       >
-        {/* 로딩 중 스켈레톤 */}
         {isLoading &&
           [0, 1].map((i) => (
             <div
@@ -330,7 +387,6 @@ export default function AnalyticsPanel({
             />
           ))}
 
-        {/* 리뷰 없음 안내 */}
         {!isLoading && negativeReviews.length === 0 && (
           <div
             style={{
@@ -347,12 +403,9 @@ export default function AnalyticsPanel({
           </div>
         )}
 
-        {/* 실제 리뷰 카드 */}
         {!isLoading &&
           negativeReviews.slice(0, 5).map((review) => {
-            // JOIN으로 가져온 제품 정보
             const product = review.products;
-
             return (
               <div
                 key={review.id}
@@ -363,7 +416,6 @@ export default function AnalyticsPanel({
                   padding: "14px",
                 }}
               >
-                {/* 별점 + 피부타입 + 시간 */}
                 <div
                   style={{
                     display: "flex",
@@ -402,7 +454,6 @@ export default function AnalyticsPanel({
                   </span>
                 </div>
 
-                {/* 제품명 (products JOIN 데이터) */}
                 {product && (
                   <div
                     style={{
@@ -430,7 +481,6 @@ export default function AnalyticsPanel({
                   </div>
                 )}
 
-                {/* AI 요약 (있을 때만) */}
                 {review.ai_summary && (
                   <p
                     style={{
@@ -445,7 +495,6 @@ export default function AnalyticsPanel({
                   </p>
                 )}
 
-                {/* 리뷰 본문 */}
                 <p
                   style={{
                     fontSize: "12.5px",
@@ -457,7 +506,6 @@ export default function AnalyticsPanel({
                   <HighlightedText text={review.review_text} />
                 </p>
 
-                {/* 태그: issue_type + keywords */}
                 <div style={{ display: "flex", flexWrap: "wrap" }}>
                   {review.issue_type && (
                     <span
@@ -533,7 +581,6 @@ export default function AnalyticsPanel({
             제품 라인업
           </div>
 
-          {/* 제품이 로딩 중이거나 없을 때 */}
           {products.length === 0 ? (
             <div
               style={{
@@ -549,27 +596,26 @@ export default function AnalyticsPanel({
             <div
               style={{
                 display: "grid",
-                // 제품 수에 따라 자동으로 열 수 결정 (최대 4열)
                 gridTemplateColumns: `repeat(${Math.min(products.length, 4)}, 1fr)`,
                 gap: "8px",
               }}
             >
               {products.map((product) => {
                 const isActive = selectedProductId === product.id;
-                const style = getProductStyle(product);
+                const style = getProductStyle(product); // ⭐️ 바뀐 이미지 맵에서 정보 로드
 
                 return (
                   <button
                     key={product.id}
                     onClick={() => handlePadClick(product)}
-                    title={`${product.brand_name} ${product.product_name}`} // 호버 시 전체 이름 툴팁
+                    title={`${product.brand_name} ${product.product_name}`}
                     style={{
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
                       justifyContent: "center",
-                      gap: "6px",
-                      padding: "14px 8px",
+                      gap: "8px", // 가로 세로 밸런스를 위해 8px로 소폭 조정
+                      padding: "12px 4px",
                       borderRadius: "10px",
                       background: style.bg,
                       border: isActive
@@ -579,8 +625,26 @@ export default function AnalyticsPanel({
                       transition: "all 0.15s ease",
                     }}
                   >
-                    <span style={{ fontSize: "22px" }}>{style.emoji}</span>
-                    {/* product_name을 짧게 잘라 표시 (공간 제한) */}
+                    {/* ⭐️ 이모지 대신 Next.js <Image /> 컴포넌트로 렌더링 */}
+                    <div
+                      style={{
+                        position: "relative",
+                        width: "32px",
+                        height: "32px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Image
+                        src={style.imgSrc}
+                        alt={product.product_name}
+                        width={32}
+                        height={32}
+                        style={{ objectFit: "contain" }} // 이미지 비율 유지
+                      />
+                    </div>
+
                     <span
                       style={{
                         fontSize: "11px",
@@ -588,7 +652,6 @@ export default function AnalyticsPanel({
                         fontWeight: isActive ? 600 : 400,
                         textAlign: "center",
                         lineHeight: "1.3",
-                        // 긴 이름은 말줄임표 처리
                         overflow: "hidden",
                         textOverflow: "ellipsis",
                         whiteSpace: "nowrap",
@@ -606,7 +669,6 @@ export default function AnalyticsPanel({
         </div>
       </div>
 
-      {/* 애니메이션 */}
       <style>{`
         @keyframes pulse {
           0%, 100% { opacity: 0.4; }
