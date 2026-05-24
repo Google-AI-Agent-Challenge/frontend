@@ -3,11 +3,11 @@
 > **우연최연우** 팀과 함께하는 H&B 입점 뷰티 브랜드를 위한 AI 대화형 리뷰 관제 솔루션
 
 
-## 배포 링크
+## 🎥 배포 링크
 
 > [👉 구경하러 가기~!](https://frontend-eight-orcin-70.vercel.app/)
 
-## 프로젝트 소개
+## 📖 프로젝트 소개
 
 하루 수만 건씩 쌓이는 고객 리뷰,  
 아직도 실무자가 직접 읽고 계신가요?
@@ -22,7 +22,7 @@ B2B 특화 AI 리뷰 감성 분석 대시보드입니다.
 “수분감은 좋지만 트러블이 발생했다”와 같은 양가감정 리뷰까지 분석할 수 있도록  
 화장품 도메인 특화 감성 분석 구조를 적용했습니다.
 
-## TONES Frontend
+## 🖥️ TONES Frontend
 
 본 프론트엔드 웹은 **React 19**와 **Next.js 16 (App Router)**을 핵심 아키텍처로 채택하여 높은 보안성, 빠른 사용자 피드백, 그리고 완벽한 반응형 시각 자료를 제공하며, 다음과 같은 핵심 비즈니스 및 UI 로직을 처리합니다.
 
@@ -36,7 +36,7 @@ B2B 특화 AI 리뷰 감성 분석 대시보드입니다.
 
 - **하이브리드 백엔드 통신 아키텍처**: Supabase DB와 직접 연결하여 빠른 로컬 쿼리를 수행할 수 있을 뿐만 아니라, 환경 변수 (`NEXT_PUBLIC_FASTAPI_URL`) 설정에 따라 FastAPI 백엔드로 즉각 트래픽을 리다이렉트하는 유연성을 확보했습니다.
 
-## 기술 스택
+## 🛠️ 기술 스택
 
 ### 1. Core Framework & Web
 * **React 19.2.4**: 차세대 렌더링 라이브러리 및 향상된 훅 기능 활용
@@ -57,7 +57,7 @@ B2B 특화 AI 리뷰 감성 분석 대시보드입니다.
 ### 5. Build & Quality
 * **ESLint 9**: 정적 코드 분석 규칙 도입 및 실시간 버그 예방
 
-## 시스템 아키텍쳐
+## 🏗️ 시스템 아키텍쳐
 
 ### 디렉토리 구조 (Layered Folder Architecture)
 
@@ -108,14 +108,14 @@ frontend/
 
 ## 사용 방법
 
-### git clone 실행
+### 1. git clone 실행
 ```shell
 $ git clone https://github.com/Google-AI-Agent-Challenge/frontend.git
 ```
 
-### 시스템 설정
+### 2. 시스템 설정
 
-#### 1. 환경 변수 파일(`.env.local` 혹은 `.env`) 추가
+#### 2-1. 환경 변수 파일(`.env.local` 혹은 `.env`) 추가
 - 루트 디렉토리에 `.env.local` 파일을 추가해주세요.
 - **Supabase**, **Google Gemini** 연동 키 설정이 필요합니다.
 
@@ -131,7 +131,7 @@ GEMINI_API_KEY="your-gemini-api-key"
 NEXT_PUBLIC_FASTAPI_URL="http://localhost:8000"
 ```
 
-#### 2. 패키지 설치 및 실행
+#### 2-2. 패키지 설치 및 실행
 - npm을 활용해 필요한 의존성을 설치하고 로컬 개발 서버를 실행합니다.
 
 ```shell
@@ -142,7 +142,7 @@ $ npm install
 $ npm run dev
 ```
 
-#### 3. 프로덕션 빌드 및 실행
+#### 2-3. 프로덕션 빌드 및 실행
 - 실제 프로덕션 서버로 구동하기 위해 아래 명령어를 사용합니다.
 
 ```shell
@@ -153,7 +153,7 @@ $ npm run build
 $ npm run start
 ```
 
-#### 4. 정적 린트 검사
+#### 2-4. 정적 린트 검사
 - ESLint 스타일링 및 문법 규칙을 확인합니다.
 ```shell
 $ npm run lint
