@@ -248,6 +248,7 @@ ${userInput}
         risingKeyword: parsed.risingKeyword || undefined,
         tags: Array.isArray(parsed.tags) ? parsed.tags : [],
         matchedReviewIds: actualUuids,
+        layoutIntent: detectLayoutIntent(userInput),
       };
     } catch {
       console.error("[chat action] JSON 파싱 실패, 원본 텍스트로 대체:", rawText);
@@ -257,6 +258,7 @@ ${userInput}
         risingKeyword: undefined,
         tags: [],
         matchedReviewIds: [],
+        layoutIntent: detectLayoutIntent(userInput),
       };
     }
   } catch (error: any) {
@@ -267,8 +269,28 @@ ${userInput}
       risingKeyword: undefined,
       tags: [],
       matchedReviewIds: [],
+      layoutIntent: detectLayoutIntent(userInput),
     };
   }
+}
+
+function detectLayoutIntent(userInput: string): string | null {
+  const input = userInput.toLowerCase();
+  if (input.includes("pin") || input.includes("핀") || input.includes("고정")) {
+    if (input.includes("트러블") || input.includes("trouble") || input.includes("자극")) {
+      return "pin_trouble_chart";
+    }
+    if (input.includes("제형") || input.includes("formulation") || input.includes("발림")) {
+      return "pin_formulation_chart";
+    }
+    if (input.includes("용기") || input.includes("container") || input.includes("디자인")) {
+      return "pin_container_chart";
+    }
+  }
+  if (input.includes("초기화") || input.includes("reset") || input.includes("원래대로")) {
+    return "reset_layout";
+  }
+  return null;
 }
 
 function extractKeywordsFallback(text: string): string[] {

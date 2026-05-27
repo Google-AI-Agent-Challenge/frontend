@@ -25,7 +25,10 @@ interface AnalyticsPanelProps {
   scores: Score[];
   products: Product[];
   isLoading?: boolean;
-  onPadSelect?: (product: Product) => void;
+  onPadSelect?: (product: Product | null) => void;
+  aiBriefing?: string;
+  pinnedWidget?: string | null;
+  onPinWidget?: (widget: string | null) => void;
 }
 
 // ----------------------------------------------------------------
@@ -208,6 +211,11 @@ export default function AnalyticsPanel({
   products,
   isLoading = false,
   onPadSelect,
+  aiBriefing,
+  pinnedWidget,
+  onPinWidget,
+  totalReviews = 0,
+  sentimentCounts = { positive: 0, neutral: 0, negative: 0 },
 }: AnalyticsPanelProps) {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
     null,
@@ -229,15 +237,32 @@ export default function AnalyticsPanel({
   const selectedProduct = products.find((p) => p.id === selectedProductId);
 
   const filteredReviews = reviews.filter((r) => {
+    // 최근 3개월간 (90일) 날짜 필터링 적용
+    const reviewDateObj = new Date(r.review_date);
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setDate(threeMonthsAgo.getDate() - 90);
+    if (reviewDateObj < threeMonthsAgo) return false;
+
     if (sentimentFilter === "all") return true;
     return r.sentiment === sentimentFilter;
   });
 
-  const visibleReviews = filteredReviews.slice(0, visibleCount);
+  // 최신 리뷰가 가장 먼저 보이도록 명시적 내림차순(최근 순) 정렬 적용
+  const sortedReviews = [...filteredReviews].sort((a, b) => {
+    return new Date(b.review_date).getTime() - new Date(a.review_date).getTime();
+  });
+
+  const visibleReviews = sortedReviews.slice(0, visibleCount);
 
   const handlePadClick = (product: Product) => {
-    setSelectedProductId(product.id);
-    onPadSelect?.(product);
+    const isAlreadySelected = selectedProductId === product.id;
+    if (isAlreadySelected) {
+      setSelectedProductId(null);
+      onPadSelect?.(null);
+    } else {
+      setSelectedProductId(product.id);
+      onPadSelect?.(product);
+    }
   };
 
   return (
@@ -272,14 +297,38 @@ export default function AnalyticsPanel({
         </span>
       </div>
 
+      {/* ---- AI Briefing Section ---- */}
+      {aiBriefing && (
+        <div style={{ padding: "0 16px", marginTop: "16px", flexShrink: 0 }}>
+          <div
+            className="glass-card"
+            style={{
+              padding: "16px",
+              borderRadius: "12px",
+              border: "1px solid rgba(255, 94, 132, 0.2) !important",
+              position: "relative",
+              overflow: "hidden"
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+              <span style={{ fontSize: "13px", fontWeight: "bold", color: "#FF5E84" }}>
+                ✨ 실시간 AI 트렌드 브리핑
+              </span>
+            </div>
+            <p style={{ fontSize: "12.5px", color: "#e8e8ec", lineHeight: "1.6", margin: 0 }}>
+              {aiBriefing}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ---- 스킨케어 속성 점수 위젯 ---- */}
       <div
         style={{
           margin: "16px 16px 0 16px",
-          background: "#1a1a1f",
-          border: "1px solid #2a2a2e",
-          borderRadius: "10px",
-          padding: "16px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
           flexShrink: 0,
         }}
       >
@@ -288,35 +337,65 @@ export default function AnalyticsPanel({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: "14px",
+            marginBottom: "4px",
+            padding: "0 4px"
           }}
         >
           <span style={{ fontWeight: 600, fontSize: "13px", color: "#e8e8ec" }}>
             스킨케어 속성 점수
           </span>
-          <ArrowUpRight size={15} color="#9999aa" />
+          <span style={{ fontSize: "11px", color: "#6b6b7a" }}>
+            (클릭하여 차트 고정/해제)
+          </span>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          {scores.map((s) => (
-            <div key={s.label}>
+        
+        {scores.map((s) => {
+          let widgetKey = "";
+          if (s.label.includes("성분") || s.label.includes("트러블")) {
+            widgetKey = "trouble";
+          } else if (s.label.includes("제형") || s.label.includes("발림성")) {
+            widgetKey = "formulation";
+          } else if (s.label.includes("용기") || s.label.includes("디자인")) {
+            widgetKey = "container";
+          }
+          
+          const isPinned = pinnedWidget === widgetKey;
+          const cardClass = isPinned ? "glass-card-pinned" : "glass-card";
+          
+          return (
+            <div
+              key={s.label}
+              className={cardClass}
+              onClick={() => {
+                if (onPinWidget) {
+                  onPinWidget(isPinned ? null : widgetKey);
+                }
+              }}
+              style={{
+                borderRadius: "10px",
+                padding: "14px 16px",
+                cursor: "pointer",
+                position: "relative",
+              }}
+            >
               <div
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
-                  marginBottom: "5px",
+                  marginBottom: "8px",
                 }}
               >
-                <span style={{ fontSize: "12px", color: "#9999aa" }}>
-                  {s.label}
+                <span style={{ fontSize: "12px", color: isPinned ? "#fff" : "#9999aa", fontWeight: isPinned ? 600 : 500 }}>
+                  {s.label} {isPinned && "📌"}
                 </span>
-                <span style={{ fontSize: "12px", color: "#9999aa" }}>
+                <span style={{ fontSize: "12px", color: isPinned ? "#FF5E84" : "#9999aa", fontWeight: "600" }}>
                   {s.value}/{s.max}
                 </span>
               </div>
               <div
                 style={{
-                  height: "5px",
-                  background: "#242428",
+                  height: "6px",
+                  background: isPinned ? "rgba(255, 94, 132, 0.15)" : "#242428",
                   borderRadius: "3px",
                   overflow: "hidden",
                 }}
@@ -325,15 +404,15 @@ export default function AnalyticsPanel({
                   style={{
                     width: `${(s.value / s.max) * 100}%`,
                     height: "100%",
-                    background: " #f9a2c0",
+                    background: isPinned ? "#FF5E84" : " #f9a2c0",
                     borderRadius: "3px",
                     transition: "width 0.6s ease",
                   }}
                 />
               </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
       {/* ---- 리뷰 필터 및 개수 헤더 ---- */}
@@ -357,18 +436,44 @@ export default function AnalyticsPanel({
             <span
               style={{ fontSize: "24px", fontWeight: 700, color: "#e8e8ec" }}
             >
-              {isLoading ? "..." : filteredReviews.length}
+              {isLoading ? (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "3.5px",
+                    height: "24px",
+                    marginRight: "4px",
+                  }}
+                >
+                  {[0, 1, 2].map((i) => (
+                    <span
+                      key={i}
+                      style={{
+                        width: "5px",
+                        height: "5px",
+                        borderRadius: "50%",
+                        background: "#FF5E84",
+                        display: "inline-block",
+                        animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
+                      }}
+                    />
+                  ))}
+                </span>
+              ) : (
+                filteredReviews.length
+              )}
             </span>
             <span
               style={{ fontSize: "13px", fontWeight: 600, color: "#e8e8ec" }}
             >
               {sentimentFilter === "all"
-                ? "전체 리뷰"
+                ? "최근 3개월간 전체 리뷰"
                 : sentimentFilter === "positive"
-                  ? "긍정 리뷰"
+                  ? "최근 3개월간 긍정 리뷰"
                   : sentimentFilter === "neutral"
-                    ? "중립 리뷰"
-                    : "부정 리뷰"}
+                    ? "최근 3개월간 중립 리뷰"
+                    : "최근 3개월간 부정 리뷰"}
             </span>
           </div>
           <span
@@ -437,18 +542,120 @@ export default function AnalyticsPanel({
         }}
       >
         {isLoading &&
-          [0, 1].map((i) => (
+          [0, 1, 2].map((i) => (
             <div
               key={i}
               style={{
                 background: "#1a1a1f",
                 border: "1px solid #2a2a2e",
                 borderRadius: "10px",
-                padding: "14px",
-                height: "120px",
-                animation: "pulse 1.5s ease-in-out infinite",
+                padding: "16px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+                animation: "pulse 1.8s ease-in-out infinite",
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
               }}
-            />
+            >
+              {/* Header row: stars and date placeholder */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                {/* 5 stars placeholders */}
+                <div style={{ display: "flex", gap: "4px" }}>
+                  {Array.from({ length: 5 }).map((_, sIdx) => (
+                    <div
+                      key={sIdx}
+                      style={{
+                        width: "12px",
+                        height: "12px",
+                        borderRadius: "50%",
+                        background: "#2a2a35",
+                      }}
+                    />
+                  ))}
+                </div>
+                {/* Date placeholder */}
+                <div
+                  style={{
+                    width: "45px",
+                    height: "12px",
+                    borderRadius: "4px",
+                    background: "#222228",
+                  }}
+                />
+              </div>
+
+              {/* Product and Skin Type placeholder tags */}
+              <div style={{ display: "flex", gap: "6px" }}>
+                <div
+                  style={{
+                    width: "80px",
+                    height: "16px",
+                    borderRadius: "4px",
+                    background: "#24242e",
+                  }}
+                />
+                <div
+                  style={{
+                    width: "60px",
+                    height: "16px",
+                    borderRadius: "4px",
+                    background: "#24242e",
+                  }}
+                />
+              </div>
+
+              {/* Summary line skeleton */}
+              <div
+                style={{
+                  width: "90%",
+                  height: "14px",
+                  borderRadius: "4px",
+                  background: "#FF5E8422",
+                  border: "1px dashed #FF5E8444",
+                }}
+              />
+
+              {/* Long text content skeletons */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "6px",
+                  marginTop: "4px",
+                }}
+              >
+                <div
+                  style={{
+                    width: "100%",
+                    height: "12px",
+                    borderRadius: "4px",
+                    background: "#202026",
+                  }}
+                />
+                <div
+                  style={{
+                    width: "95%",
+                    height: "12px",
+                    borderRadius: "4px",
+                    background: "#202026",
+                  }}
+                />
+                <div
+                  style={{
+                    width: "70%",
+                    height: "12px",
+                    borderRadius: "4px",
+                    background: "#202026",
+                  }}
+                />
+              </div>
+            </div>
           ))}
 
         {!isLoading && filteredReviews.length === 0 && (
@@ -603,7 +810,7 @@ export default function AnalyticsPanel({
       </div>
 
       {/* ---- 리뷰 더보기 버튼 ---- */}
-      {filteredReviews.length > visibleCount && (
+      {!isLoading && filteredReviews.length > visibleCount && (
         <div style={{ padding: "14px 16px", flexShrink: 0 }}>
           <button
             style={{

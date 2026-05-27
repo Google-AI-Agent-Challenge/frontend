@@ -14,33 +14,12 @@ import {
   fetchProductsAction,
   fetchReviewsByProductAction,
   fetchReviewsByIdsAction,
+  fetchDashboardStatisticsAction,
+  saveLayoutStateAction,
+  loadLayoutStateAction,
 } from "./actions/data";
 
 // 순수 함수 (클라이언트 번들 크기 최적화 및 모듈 로드 에러 방지용 내장)
-
-function calculateScores(reviews: Review[]): Score[] {
-  const attributes = [
-    { label: "성분 / 트러블", keywords: ["트러블", "성분", "붉은기", "여드름", "좁쌀", "따가움", "자극"], issueTypes: ["트러블", "성분", "자극"] },
-    { label: "제형 / 발림성", keywords: ["발림성", "제형", "흡수", "촉촉", "텍스처", "밀림", "끈적"], issueTypes: ["발림성", "제형"] },
-    { label: "용기 / 디자인", keywords: ["용기", "디자인", "패키지", "포장", "뚜껑", "불량"], issueTypes: ["용기불량", "용기", "디자인"] },
-  ];
-
-  return attributes.map(({ label, keywords, issueTypes }) => {
-    const related = reviews.filter((r) => {
-      if (r.issue_type && issueTypes.some((t) => r.issue_type!.includes(t))) return true;
-      return keywords.some((kw) => r.review_text?.toLowerCase().includes(kw.toLowerCase()));
-    });
-
-    if (related.length === 0) return { label, value: 50, max: 100 };
-
-    const avgScore = related.reduce((sum, r) => {
-      if (r.sentiment_score !== null && r.sentiment_score !== undefined) return sum + Number(r.sentiment_score);
-      return sum + (r.rating - 1) / 4;
-    }, 0) / related.length;
-
-    return { label, value: Math.max(1, Math.min(100, Math.round(avgScore * 100))), max: 100 };
-  });
-}
 
 import type { Message, Review, Score, Product } from "./types";
 
@@ -57,19 +36,55 @@ export default function DashboardPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [pageError, setPageError] = useState<string | null>(null);
-  // 초기 데이터 로드
+
+  // 대시보드 백엔드 연동 및 레이아웃 상태
+  const [aiBriefing, setAiBriefing] = useState<string | undefined>(undefined);
+  const [pinnedWidget, setPinnedWidget] = useState<string | null>(null);
+  const [totalReviews, setTotalReviews] = useState<number>(0);
+  const [sentimentCounts, setSentimentCounts] = useState<{ positive: number; neutral: number; negative: number }>({ positive: 0, neutral: 0, negative: 0 });
+  const userToken = "demo_user_token"; // 로컬/데모용 영구 저장 토큰
+
+  // 초기 데이터 로드 (레이아웃 복원 및 백엔드 통계 바인딩)
   useEffect(() => {
     async function init() {
       try {
-        const [prodData, reviewData] = await Promise.all([
+        // 1. 레이아웃 상태 DB에서 불러오기 (자가 치유 폴백 포함)
+        let dbPinned: string | null = null;
+        try {
+          dbPinned = await loadLayoutStateAction(userToken);
+        } catch (dbErr) {
+          console.warn("[DashboardPage] Supabase load layout failed:", dbErr);
+        }
+
+        if (dbPinned) {
+          setPinnedWidget(dbPinned);
+        } else {
+          const localPinned = localStorage.getItem("pinnedWidget");
+          if (localPinned) {
+            setPinnedWidget(localPinned);
+          }
+        }
+
+        // 2. 제품 목록, 최신 리뷰, 대시보드 통계 병렬 로드
+        const [prodData, reviewData, statsData] = await Promise.all([
           fetchProductsAction(),
           fetchLatestReviewsAction(2000),
+          fetchDashboardStatisticsAction(null, 90), // 전체 제품 통계 (최근 3개월)
         ]);
         
         if (prodData.length > 0) setProducts(prodData);
-        if (reviewData.length > 0) {
-          setReviews(reviewData);
-          setScores(calculateScores(reviewData));
+        if (reviewData.length > 0) setReviews(reviewData);
+        
+        if (statsData) {
+          setAiBriefing(statsData.ai_briefing);
+          setTotalReviews(statsData.total_reviews);
+          setSentimentCounts(statsData.sentiment_breakdown);
+          const mappedScores: Score[] = [
+            { label: "성분 / 트러블", value: Math.round(statsData.attribute_scores.ingredients * 100), max: 100 },
+            { label: "제형 / 발림성", value: Math.round(statsData.attribute_scores.formulation * 100), max: 100 },
+            { label: "용기 / 디자인", value: Math.round(statsData.attribute_scores.container * 100), max: 100 },
+          ];
+          setScores(mappedScores);
         }
       } catch (err: any) {
         setPageError(err.message || "초기 데이터 로드 중 알 수 없는 오류가 발생했습니다.");
@@ -78,7 +93,22 @@ export default function DashboardPage() {
     init();
   }, []);
 
-  // 채팅 전송 핸들러
+  // 수동 위젯 고정/해제 핸들러
+  const handlePinWidget = async (widgetKey: string | null) => {
+    setPinnedWidget(widgetKey);
+    if (widgetKey) {
+      localStorage.setItem("pinnedWidget", widgetKey);
+    } else {
+      localStorage.removeItem("pinnedWidget");
+    }
+    try {
+      await saveLayoutStateAction(userToken, widgetKey);
+    } catch (err) {
+      console.warn("[handlePinWidget] Failed to save layout to DB:", err);
+    }
+  };
+
+  // 채팅 전송 핸들러 (자연어 레이아웃 명령 감지 및 통계 실시간 동기화)
   const handleSend = async (userInput: string) => {
     if (!userInput.trim() || isLoading) return;
 
@@ -104,8 +134,52 @@ export default function DashboardPage() {
 
       if (filtered.length > 0) {
         setReviews(filtered);
-        setScores(calculateScores(filtered));
         fetchedReviewCount = filtered.length;
+      }
+
+      // 자연어 레이아웃 제어 명령 인터셉트 및 UI 제어
+      if (aiResponse.layoutIntent) {
+        let mappedWidget: string | null = null;
+        if (aiResponse.layoutIntent === "pin_trouble_chart") {
+          mappedWidget = "trouble";
+        } else if (aiResponse.layoutIntent === "pin_formulation_chart") {
+          mappedWidget = "formulation";
+        } else if (aiResponse.layoutIntent === "pin_container_chart") {
+          mappedWidget = "container";
+        } else if (aiResponse.layoutIntent === "reset_layout") {
+          mappedWidget = null;
+        }
+
+        setPinnedWidget(mappedWidget);
+        if (mappedWidget) {
+          localStorage.setItem("pinnedWidget", mappedWidget);
+        } else {
+          localStorage.removeItem("pinnedWidget");
+        }
+        try {
+          await saveLayoutStateAction(userToken, mappedWidget);
+        } catch (dbErr) {
+          console.warn("[handleSend] Failed to save layout intent to DB:", dbErr);
+        }
+      }
+
+      // 검색 결과 또는 제품별 실시간 백엔드 통계 동기화
+      const matchedProductId = filtered.length > 0 ? filtered[0].product_id : null;
+      try {
+        const statsData = await fetchDashboardStatisticsAction(matchedProductId, 90);
+        if (statsData) {
+          setAiBriefing(statsData.ai_briefing);
+          setTotalReviews(statsData.total_reviews);
+          setSentimentCounts(statsData.sentiment_breakdown);
+          const mappedScores: Score[] = [
+            { label: "성분 / 트러블", value: Math.round(statsData.attribute_scores.ingredients * 100), max: 100 },
+            { label: "제형 / 발림성", value: Math.round(statsData.attribute_scores.formulation * 100), max: 100 },
+            { label: "용기 / 디자인", value: Math.round(statsData.attribute_scores.container * 100), max: 100 },
+          ];
+          setScores(mappedScores);
+        }
+      } catch (err) {
+        console.warn("[handleSend] Failed to fetch updated statistics:", err);
       }
 
       setMessages((prev) => [
@@ -119,6 +193,7 @@ export default function DashboardPage() {
           keywords: aiResponse.keywords,
           matchedReviewIds: aiResponse.matchedReviewIds,
           reviewCount: fetchedReviewCount,
+          layoutIntent: aiResponse.layoutIntent,
         },
       ]);
     } catch (err: any) {
@@ -182,14 +257,29 @@ export default function DashboardPage() {
     }
   };
 
-  // 패드 선택 핸들러
-  const handlePadSelect = async (product: Product) => {
+  // 패드 선택 핸들러 (토글 선택 해제 시 product = null 수신)
+  const handlePadSelect = async (product: Product | null) => {
     setIsLoading(true);
     setPageError(null);
     try {
-      const productReviews = await fetchReviewsByProductAction(product.id, 2000);
+      const [productReviews, statsData] = await Promise.all([
+        product
+          ? fetchReviewsByProductAction(product.id, 2000)
+          : fetchLatestReviewsAction(2000),
+        fetchDashboardStatisticsAction(product ? product.id : null, 90),
+      ]);
       setReviews(productReviews);
-      setScores(productReviews.length > 0 ? calculateScores(productReviews) : DEFAULT_SCORES);
+      if (statsData) {
+        setAiBriefing(statsData.ai_briefing);
+        setTotalReviews(statsData.total_reviews);
+        setSentimentCounts(statsData.sentiment_breakdown);
+        const mappedScores: Score[] = [
+          { label: "성분 / 트러블", value: Math.round(statsData.attribute_scores.ingredients * 100), max: 100 },
+          { label: "제형 / 발림성", value: Math.round(statsData.attribute_scores.formulation * 100), max: 100 },
+          { label: "용기 / 디자인", value: Math.round(statsData.attribute_scores.container * 100), max: 100 },
+        ];
+        setScores(mappedScores);
+      }
     } catch (err: any) {
       setPageError("패드 필터 오류: " + err.message);
     } finally {
@@ -233,6 +323,11 @@ export default function DashboardPage() {
         products={products}
         isLoading={isLoading}
         onPadSelect={handlePadSelect}
+        aiBriefing={aiBriefing}
+        pinnedWidget={pinnedWidget}
+        onPinWidget={handlePinWidget}
+        totalReviews={totalReviews}
+        sentimentCounts={sentimentCounts}
       />
     </main>
   );

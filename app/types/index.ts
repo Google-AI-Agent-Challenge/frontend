@@ -16,6 +16,7 @@ export interface Message {
   keywords?: string[];
   matchedReviewIds?: string[];
   reviewCount?: number;
+  layoutIntent?: string | null;
 }
 
 // ----------------------------------------------------------------
@@ -91,4 +92,5 @@ export interface AiResponse {
   risingKeyword?: string;
   tags?: string[];
   matchedReviewIds?: string[];
+  layoutIntent?: string | null;
 }

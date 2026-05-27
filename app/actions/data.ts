@@ -25,9 +25,52 @@ const REVIEW_SELECT = `
 `.trim();
 
 // ──────────────────────────────────────────────────────────
+// FastAPI 하이브리드 리다이렉트 연동부
+// ──────────────────────────────────────────────────────────
+const FASTAPI_URL = process.env.NEXT_PUBLIC_FASTAPI_URL;
+
+function isFastAPIEnabled(): boolean {
+  return !!FASTAPI_URL && !FASTAPI_URL.startsWith("your-") && FASTAPI_URL !== "";
+}
+
+async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  const url = `${FASTAPI_URL}/api/v1${path}`;
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options?.headers,
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`[FastAPI Request Failed] ${res.status}: ${res.statusText}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+export interface StatisticsData {
+  product_id: string | null;
+  period: number;
+  total_reviews: number;
+  average_rating: number;
+  sentiment_breakdown: { positive: number; neutral: number; negative: number };
+  attribute_scores: { ingredients: number; formulation: number; container: number };
+  ai_briefing: string;
+}
+
+// ──────────────────────────────────────────────────────────
 // 제품 목록 조회
 // ──────────────────────────────────────────────────────────
 export async function fetchProductsAction(): Promise<Product[]> {
+  if (isFastAPIEnabled()) {
+    try {
+      console.log("[fetchProductsAction] Redirecting to FastAPI...");
+      return await apiFetch<Product[]>("/dashboard/products");
+    } catch (e) {
+      console.warn("[fetchProductsAction] FastAPI failed, falling back to Supabase:", e);
+    }
+  }
+
   const supabase = getSupabase();
   const { data, error } = await supabase
     .from("products")
@@ -44,6 +87,15 @@ export async function fetchProductsAction(): Promise<Product[]> {
 // 최신 리뷰 조회
 // ──────────────────────────────────────────────────────────
 export async function fetchLatestReviewsAction(limit = 20): Promise<Review[]> {
+  if (isFastAPIEnabled()) {
+    try {
+      console.log("[fetchLatestReviewsAction] Redirecting to FastAPI...");
+      return await apiFetch<Review[]>(`/dashboard/reviews/latest?limit=${limit}`);
+    } catch (e) {
+      console.warn("[fetchLatestReviewsAction] FastAPI failed, falling back to Supabase:", e);
+    }
+  }
+
   const supabase = getSupabase();
   let allData: any[] = [];
   let offset = 0;
@@ -78,6 +130,16 @@ export async function fetchReviewsByKeywordsAction(
 ): Promise<Review[]> {
   if (!keywords || keywords.length === 0) {
     return fetchLatestReviewsAction(limit);
+  }
+
+  if (isFastAPIEnabled()) {
+    try {
+      console.log("[fetchReviewsByKeywordsAction] Redirecting to FastAPI...");
+      const kwParams = keywords.map(kw => `keywords=${encodeURIComponent(kw)}`).join("&");
+      return await apiFetch<Review[]>(`/dashboard/reviews/search?${kwParams}&limit=${limit}`);
+    } catch (e) {
+      console.warn("[fetchReviewsByKeywordsAction] FastAPI failed, falling back to Supabase:", e);
+    }
   }
 
   const supabase = getSupabase();
@@ -138,6 +200,15 @@ export async function fetchReviewsByProductAction(
   productId: string,
   limit = 20
 ): Promise<Review[]> {
+  if (isFastAPIEnabled()) {
+    try {
+      console.log("[fetchReviewsByProductAction] Redirecting to FastAPI...");
+      return await apiFetch<Review[]>(`/dashboard/reviews/product/${productId}?limit=${limit}`);
+    } catch (e) {
+      console.warn("[fetchReviewsByProductAction] FastAPI failed, falling back to Supabase:", e);
+    }
+  }
+
   const supabase = getSupabase();
   
   let allData: any[] = [];
@@ -165,3 +236,81 @@ export async function fetchReviewsByProductAction(
   return (allData as unknown as Review[]) ?? [];
 }
 
+// ──────────────────────────────────────────────────────────
+// 대시보드 통계 및 AI 요약 브리핑 조회 (GET /statistics)
+// ──────────────────────────────────────────────────────────
+export async function fetchDashboardStatisticsAction(
+  productId: string | null,
+  period = 7
+): Promise<StatisticsData> {
+  if (isFastAPIEnabled()) {
+    try {
+      console.log("[fetchDashboardStatisticsAction] Redirecting to FastAPI...");
+      const path = productId
+        ? `/dashboard/statistics?product_id=${productId}&period=${period}`
+        : `/dashboard/statistics?period=${period}`;
+      return await apiFetch<StatisticsData>(path);
+    } catch (e) {
+      console.warn("[fetchDashboardStatisticsAction] FastAPI statistics failed, returning local mock:", e);
+    }
+  }
+  
+  // 로컬/오프라인 모드용 기본 통계 반환
+  return {
+    product_id: productId,
+    period: period,
+    total_reviews: 15,
+    average_rating: 4.2,
+    sentiment_breakdown: { positive: 10, neutral: 3, negative: 2 },
+    attribute_scores: { ingredients: 0.85, formulation: 0.90, container: 0.45 },
+    ai_briefing: "로컬 오프라인 대체용 트렌드 요약입니다. 성분 및 제형 만족도는 우수하나 일부 용기 파손 불만이 수집되었습니다."
+  };
+}
+
+// ──────────────────────────────────────────────────────────
+// UI 레이아웃 상태 저장 및 불러오기 (UI Persistence)
+// ──────────────────────────────────────────────────────────
+export async function saveLayoutStateAction(
+  token: string,
+  pinnedWidget: string | null
+): Promise<boolean> {
+  try {
+    const supabase = getSupabase();
+    const { error } = await supabase
+      .from("user_layouts")
+      .upsert(
+        { user_token: token, pinned_widget: pinnedWidget, updated_at: new Date().toISOString() },
+        { onConflict: "user_token" }
+      );
+    if (error) {
+      console.warn("[saveLayoutStateAction] Supabase upsert error:", error.message);
+      return false;
+    }
+    return true;
+  } catch (err: any) {
+    console.warn("[saveLayoutStateAction] Failed to save layout in Supabase:", err.message || err);
+    return false;
+  }
+}
+
+export async function loadLayoutStateAction(
+  token: string
+): Promise<string | null> {
+  try {
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from("user_layouts")
+      .select("pinned_widget")
+      .eq("user_token", token)
+      .maybeSingle();
+      
+    if (error) {
+      console.warn("[loadLayoutStateAction] Supabase fetch error:", error.message);
+      return null;
+    }
+    return data?.pinned_widget ?? null;
+  } catch (err: any) {
+    console.warn("[loadLayoutStateAction] Failed to load layout from Supabase:", err.message || err);
+    return null;
+  }
+}
