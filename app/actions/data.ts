@@ -29,18 +29,31 @@ const REVIEW_SELECT = `
 // ──────────────────────────────────────────────────────────
 const FASTAPI_URL = process.env.NEXT_PUBLIC_FASTAPI_URL;
 
+let cachedToken: string | null = null;
+
+async function getAccessToken(): Promise<string> {
+  // 프로토타입 단계: JWT 인증 비활성화로 빈 토큰 반환
+  return "";
+}
+
 function isFastAPIEnabled(): boolean {
   return !!FASTAPI_URL && !FASTAPI_URL.startsWith("your-") && FASTAPI_URL !== "";
 }
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const url = `${FASTAPI_URL}/api/v1${path}`;
+  const token = await getAccessToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...options?.headers,
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const res = await fetch(url, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options?.headers,
-    },
+    headers,
   });
   if (!res.ok) {
     throw new Error(`[FastAPI Request Failed] ${res.status}: ${res.statusText}`);
