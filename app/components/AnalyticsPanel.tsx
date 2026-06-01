@@ -37,73 +37,73 @@ const PRODUCT_STYLE_MAP: {
   bg: string;
   activeColor: string;
 }[] = [
-  {
-    keyword: "당근",
-    imgSrc: "/images/carrot.png",
-    bg: "#3a1820",
-    activeColor: "#FF5E84",
-  },
-  {
-    keyword: "도토리",
-    imgSrc: "/images/acorn.png",
-    bg: "#2a2520",
-    activeColor: "#b07840",
-  },
-  {
-    keyword: "감자",
-    imgSrc: "/images/potato.png",
-    bg: "#28281e",
-    activeColor: "#c8b060",
-  },
-  {
-    keyword: "미나리",
-    imgSrc: "/images/parsley.png",
-    bg: "#1e2820",
-    activeColor: "#60a870",
-  },
-  {
-    keyword: "라이스",
-    imgSrc: "/images/rice.png",
-    bg: "#262624", // 어두운 웜그레이
-    activeColor: "#d4cbb3", // 부드러운 쌀겨/베이지색
-  },
-  {
-    keyword: "복숭아",
-    imgSrc: "/images/peach.png",
-    bg: "#2c1e22", // 어두운 핑크브라운
-    activeColor: "#ff99bb", // 화사한 피치 핑크
-  },
-  {
-    keyword: "레몬그라스",
-    imgSrc: "/images/niac.png",
-    bg: "#1a2622", // 어두운 청록/티트리 계열
-    activeColor: "#7accb5", // 산뜻한 민트/그린
-  },
-  {
-    keyword: "블루 캐모마일",
-    imgSrc: "/images/blue.png",
-    bg: "#18202c", // 어두운 네이비
-    activeColor: "#7fb2f0", // 부드러운 스카이블루
-  },
-  {
-    keyword: "샤인머스캣",
-    imgSrc: "/images/cica.png",
-    bg: "#1e261e", // 어두운 올리브
-    activeColor: "#90c95c", // 상큼한 연두색
-  },
-  {
-    keyword: "아스파라거스",
-    imgSrc: "/images/clut.png",
-    bg: "#20261c", // 어두운 뮤트 그린
-    activeColor: "#a6c478", // 차분한 라이트 그린
-  },
-  {
-    keyword: "핑크자몽",
-    imgSrc: "/images/aha.png",
-    bg: "#2c1c1c", // 어두운 적갈색
-    activeColor: "#ff8270", // 코랄/자몽 핑크
-  },
-];
+    {
+      keyword: "당근",
+      imgSrc: "/images/carrot.png",
+      bg: "#3a1820",
+      activeColor: "#FF5E84",
+    },
+    {
+      keyword: "도토리",
+      imgSrc: "/images/acorn.png",
+      bg: "#2a2520",
+      activeColor: "#b07840",
+    },
+    {
+      keyword: "감자",
+      imgSrc: "/images/potato.png",
+      bg: "#28281e",
+      activeColor: "#c8b060",
+    },
+    {
+      keyword: "미나리",
+      imgSrc: "/images/parsley.png",
+      bg: "#1e2820",
+      activeColor: "#60a870",
+    },
+    {
+      keyword: "라이스",
+      imgSrc: "/images/rice.png",
+      bg: "#262624", // 어두운 웜그레이
+      activeColor: "#d4cbb3", // 부드러운 쌀겨/베이지색
+    },
+    {
+      keyword: "복숭아",
+      imgSrc: "/images/peach.png",
+      bg: "#2c1e22", // 어두운 핑크브라운
+      activeColor: "#ff99bb", // 화사한 피치 핑크
+    },
+    {
+      keyword: "레몬그라스",
+      imgSrc: "/images/niac.png",
+      bg: "#1a2622", // 어두운 청록/티트리 계열
+      activeColor: "#7accb5", // 산뜻한 민트/그린
+    },
+    {
+      keyword: "블루 캐모마일",
+      imgSrc: "/images/blue.png",
+      bg: "#18202c", // 어두운 네이비
+      activeColor: "#7fb2f0", // 부드러운 스카이블루
+    },
+    {
+      keyword: "샤인머스캣",
+      imgSrc: "/images/cica.png",
+      bg: "#1e261e", // 어두운 올리브
+      activeColor: "#90c95c", // 상큼한 연두색
+    },
+    {
+      keyword: "아스파라거스",
+      imgSrc: "/images/clut.png",
+      bg: "#20261c", // 어두운 뮤트 그린
+      activeColor: "#a6c478", // 차분한 라이트 그린
+    },
+    {
+      keyword: "핑크자몽",
+      imgSrc: "/images/aha.png",
+      bg: "#2c1c1c", // 어두운 적갈색
+      activeColor: "#ff8270", // 코랄/자몽 핑크
+    },
+  ];
 
 /**
  * 제품명에서 매칭되는 이미지와 스타일셋을 반환합니다.
