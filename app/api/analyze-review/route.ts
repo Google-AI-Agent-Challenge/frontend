@@ -5,11 +5,6 @@ import { createClient } from "@supabase/supabase-js";
 // 환경 변수 설정
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? "");
 
-// .env.local에 저장된 키를 사용하도록 수정
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 const ALLOWED_SENTIMENTS = ["positive", "neutral", "negative"];
 
@@ -172,6 +167,12 @@ async function analyzeWithGemini(reviewText: string, rating: number) {
 }
 
 export async function POST(req: Request) {
+  // 런타임에만 Supabase 클라이언트 초기화 (빌드 시 환경변수 불필요)
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
   try {
     const body = await req.json();
     const { product_id, review_text, rating, reviewer_type } = body;
