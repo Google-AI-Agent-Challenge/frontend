@@ -1,8 +1,39 @@
 "use client";
 
 import React from "react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LabelList
+} from "recharts";
 
 export default function MiddleCharts() {
+  const negativeReviewTrend = [
+    { name: "05/11", percent: 9.8, count: 32 },
+    { name: "05/18", percent: 10.7, count: 38 },
+    { name: "05/25", percent: 12.6, count: 45 },
+    { name: "06/01", percent: 14.7, count: 53 },
+  ];
+
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-white px-3 py-2 rounded-lg shadow-md border border-gray-100 flex flex-col items-center">
+          <p className="text-[#ef4444] font-bold text-[13px] tracking-tight">
+            {data.percent}% <span className="text-gray-500 font-medium ml-1">(총 {data.count}건)</span>
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   const trendingKeywords = [
     {
       rank: 1,
@@ -86,167 +117,46 @@ export default function MiddleCharts() {
           부정 리뷰 추이
         </h3>
         <div className="bg-white rounded-2xl p-7 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 flex-1 flex flex-col justify-center">
-          <div className="w-full relative pt-6 pb-2 pr-4 pl-8">
-            <svg
-              className="w-full h-[160px] overflow-visible"
-              viewBox="0 0 400 150"
-              preserveAspectRatio="none"
-            >
-              {/* Y축 가이드 라인 */}
-              <path d="M 0 0 L 400 0" stroke="#f3f4f6" strokeWidth="1.5" />
-              <path d="M 0 37.5 L 400 37.5" stroke="#f3f4f6" strokeWidth="1.5" />
-              <path d="M 0 75 L 400 75" stroke="#f3f4f6" strokeWidth="1.5" />
-              <path d="M 0 112.5 L 400 112.5" stroke="#f3f4f6" strokeWidth="1.5" />
-              <path d="M 0 150 L 400 150" stroke="#f3f4f6" strokeWidth="1.5" />
-
-              {/* 라인 차트 선 */}
-              <path
-                d="M 50 100 L 150 85 L 250 65 L 350 30"
-                fill="none"
-                stroke="#e11d48"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="drop-shadow-md"
-              />
-
-              {/* 1주차 */}
-              <circle
-                cx="50"
-                cy="100"
-                r="4.5"
-                fill="white"
-                stroke="#e11d48"
-                strokeWidth="2.5"
-              />
-              <text
-                x="50"
-                y="85"
-                textAnchor="middle"
-                fill="#4b5563"
-                fontSize="12"
-                fontWeight="700"
-              >
-                9.8%
-              </text>
-              <text
-                x="50"
-                y="175"
-                textAnchor="middle"
-                fill="#9ca3af"
-                fontSize="12"
-                fontWeight="600"
-              >
-                1주차
-              </text>
-
-              {/* 2주차 */}
-              <circle
-                cx="150"
-                cy="85"
-                r="4.5"
-                fill="white"
-                stroke="#e11d48"
-                strokeWidth="2.5"
-              />
-              <text
-                x="150"
-                y="70"
-                textAnchor="middle"
-                fill="#4b5563"
-                fontSize="12"
-                fontWeight="700"
-              >
-                10.7%
-              </text>
-              <text
-                x="150"
-                y="175"
-                textAnchor="middle"
-                fill="#9ca3af"
-                fontSize="12"
-                fontWeight="600"
-              >
-                2주차
-              </text>
-
-              {/* 3주차 */}
-              <circle
-                cx="250"
-                cy="65"
-                r="4.5"
-                fill="white"
-                stroke="#e11d48"
-                strokeWidth="2.5"
-              />
-              <text
-                x="250"
-                y="50"
-                textAnchor="middle"
-                fill="#4b5563"
-                fontSize="12"
-                fontWeight="700"
-              >
-                12.6%
-              </text>
-              <text
-                x="250"
-                y="175"
-                textAnchor="middle"
-                fill="#9ca3af"
-                fontSize="12"
-                fontWeight="600"
-              >
-                3주차
-              </text>
-
-              {/* 4주차 */}
-              <circle
-                cx="350"
-                cy="30"
-                r="4.5"
-                fill="white"
-                stroke="#e11d48"
-                strokeWidth="2.5"
-              />
-              <text
-                x="350"
-                y="15"
-                textAnchor="middle"
-                fill="#4b5563"
-                fontSize="12"
-                fontWeight="700"
-              >
-                14.7%
-              </text>
-              <text
-                x="350"
-                y="175"
-                textAnchor="middle"
-                fill="#9ca3af"
-                fontSize="12"
-                fontWeight="600"
-              >
-                4주차
-              </text>
-
-              {/* Y축 라벨 */}
-              <text x="-15" y="4" textAnchor="end" fill="#9ca3af" fontSize="11" fontWeight="500">
-                20%
-              </text>
-              <text x="-15" y="41.5" textAnchor="end" fill="#9ca3af" fontSize="11" fontWeight="500">
-                15%
-              </text>
-              <text x="-15" y="79" textAnchor="end" fill="#9ca3af" fontSize="11" fontWeight="500">
-                10%
-              </text>
-              <text x="-15" y="116.5" textAnchor="end" fill="#9ca3af" fontSize="11" fontWeight="500">
-                5%
-              </text>
-              <text x="-15" y="154" textAnchor="end" fill="#9ca3af" fontSize="11" fontWeight="500">
-                0%
-              </text>
-            </svg>
+          <div className="w-full relative h-[180px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={negativeReviewTrend} margin={{ top: 20, right: 20, left: -25, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: "#9ca3af", fontSize: 12, fontWeight: 600 }} 
+                  dy={10}
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: "#9ca3af", fontSize: 11, fontWeight: 500 }} 
+                  tickFormatter={(val) => `${val}%`}
+                  domain={[0, 20]}
+                  ticks={[0, 5, 10, 15, 20]}
+                />
+                <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#f3f4f6', strokeWidth: 2 }} />
+                <Line 
+                  type="linear" 
+                  dataKey="percent" 
+                  stroke="#ef4444" 
+                  strokeWidth={2.5} 
+                  dot={{ r: 4.5, fill: "white", stroke: "#ef4444", strokeWidth: 2.5 }}
+                  activeDot={{ r: 6, fill: "#ef4444", stroke: "white", strokeWidth: 2 }}
+                >
+                  <LabelList 
+                    dataKey="percent" 
+                    position="top" 
+                    offset={10} 
+                    fill="#4b5563" 
+                    fontSize={12} 
+                    fontWeight={700}
+                    formatter={(value: any) => `${value}%`}
+                  />
+                </Line>
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>

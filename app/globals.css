@@ -57,3 +57,19 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #FF5E84;
 }
+
+/* Custom Pink Scrollbar */
+.pink-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.pink-scrollbar::-webkit-scrollbar-track {
+  background: #fdf2f8;
+  border-radius: 10px;
+}
+.pink-scrollbar::-webkit-scrollbar-thumb {
+  background: #fbcfe8;
+  border-radius: 10px;
+}
+.pink-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #f472b6;
+}
