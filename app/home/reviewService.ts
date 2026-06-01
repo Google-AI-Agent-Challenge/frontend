@@ -2,36 +2,13 @@
  * ============================================================
  * app/home/reviewService.ts
  * ============================================================
- * Supabase 'reviews' + 'products' 테이블 데이터 조회 서비스 레이어
+ * 백엔드 서버(API)를 통한 데이터 조회 서비스 레이어
  * ============================================================
  */
 
-import { supabase } from "../lib/supabase";
 import type { Review, Product, Score } from "../types";
 
-const REVIEW_SELECT = `
-  id,
-  product_id,
-  source,
-  reviewer_type,
-  review_text,
-  rating,
-  review_date,
-  sentiment,
-  sentiment_score,
-  keywords,
-  issue_type,
-  ai_summary,
-  created_at,
-  review_id,
-  products (
-    id,
-    brand_name,
-    product_name,
-    category,
-    target_skin
-  )
-`.trim();
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export async function fetchReviewsByKeywords(
   keywords: string[],
@@ -41,77 +18,74 @@ export async function fetchReviewsByKeywords(
     return fetchLatestReviews(limit);
   }
 
-  const orFilter = keywords
-    .map((kw) => `review_text.ilike.%${kw}%`)
-    .join(",");
+  try {
+    const params = new URLSearchParams();
+    params.append("keywords", keywords.join(","));
+    params.append("limit", limit.toString());
 
-  const { data, error } = await supabase
-    .from("reviews")
-    .select(REVIEW_SELECT)
-    .or(orFilter)
-    .order("review_date", { ascending: false })
-    .limit(limit);
-
-  if (error) {
+    const response = await fetch(`${API_BASE_URL}/api/reviews?${params.toString()}`);
+    if (!response.ok) {
+      throw new Error(`Error fetching reviews: ${response.statusText}`);
+    }
+    const data = await response.json();
+    return data as Review[];
+  } catch (error: any) {
     console.error("[reviewService] fetchReviewsByKeywords 오류:", error.message);
     return [];
   }
-
-  return (data as unknown as Review[]) ?? [];
 }
 
 export async function fetchLatestReviews(limit: number = 20): Promise<Review[]> {
-  const { data, error } = await supabase
-    .from("reviews")
-    .select(REVIEW_SELECT)
-    .order("review_date", { ascending: false })
-    .limit(limit);
-
-  if (error) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/reviews?limit=${limit}`);
+    if (!response.ok) {
+      throw new Error(`Error fetching latest reviews: ${response.statusText}`);
+    }
+    const data = await response.json();
+    return data as Review[];
+  } catch (error: any) {
     console.error("[reviewService] fetchLatestReviews 오류:", error.message);
     return [];
   }
-
-  return (data as unknown as Review[]) ?? [];
 }
 
 export async function fetchProducts(category?: string): Promise<Product[]> {
-  let query = supabase
-    .from("products")
-    .select("id, brand_name, product_name, category, target_skin, created_at")
-    .order("product_name", { ascending: true });
-
-  if (category) {
-    query = query.eq("category", category);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
+  try {
+    const params = new URLSearchParams();
+    if (category) {
+      params.append("category", category);
+    }
+    const response = await fetch(`${API_BASE_URL}/api/products?${params.toString()}`);
+    if (!response.ok) {
+      throw new Error(`Error fetching products: ${response.statusText}`);
+    }
+    const data = await response.json();
+    return data as Product[];
+  } catch (error: any) {
     console.error("[reviewService] fetchProducts 오류:", error.message);
     return [];
   }
-
-  return (data as Product[]) ?? [];
 }
 
 export async function fetchReviewsByProduct(
   productId: string,
   limit: number = 20
 ): Promise<Review[]> {
-  const { data, error } = await supabase
-    .from("reviews")
-    .select(REVIEW_SELECT)
-    .eq("product_id", productId)
-    .order("review_date", { ascending: false })
-    .limit(limit);
+  try {
+    const params = new URLSearchParams();
+    params.append("product_id", productId);
+    params.append("limit", limit.toString());
 
-  if (error) {
+    const response = await fetch(`${API_BASE_URL}/api/reviews?${params.toString()}`);
+    if (!response.ok) {
+      throw new Error(`Error fetching reviews by product: ${response.statusText}`);
+    }
+    const data = await response.json();
+    return data as Review[];
+  } catch (error: any) {
     console.error("[reviewService] fetchReviewsByProduct 오류:", error.message);
     return [];
   }
-
-  return (data as unknown as Review[]) ?? [];
 }
 
 export function filterNegativeReviews(reviews: Review[]): Review[] {

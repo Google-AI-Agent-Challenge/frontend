@@ -2,71 +2,43 @@
 
 /**
  * app/actions/data.ts
- * Supabase 데이터 조회를 서버에서 실행하는 Server Actions
- * 브라우저가 아닌 서버에서 실행되므로 환경변수가 항상 안정적으로 로드됩니다.
+ * API 서버를 통한 데이터 조회 Server Actions
  */
 
-import { createClient } from "@supabase/supabase-js";
-import type { Product, Review, Score } from "../types";
+import type { Product, Review } from "../types";
 
-// 서버 액션 내에서 매번 fresh한 클라이언트를 생성
-function getSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  return createClient(url, key);
-}
-
-// 공통 SELECT 쿼리 (products JOIN 포함)
-const REVIEW_SELECT = `
-  id, product_id, source, reviewer_type, review_text,
-  rating, review_date, sentiment, sentiment_score,
-  keywords, issue_type, ai_summary, created_at, review_id,
-  products (id, brand_name, product_name, category, target_skin)
-`.trim();
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
 // ──────────────────────────────────────────────────────────
 // 제품 목록 조회
 // ──────────────────────────────────────────────────────────
 export async function fetchProductsAction(): Promise<Product[]> {
-  const supabase = getSupabase();
-  const { data, error } = await supabase
-    .from("products")
-    .select("id, brand_name, product_name, category, target_skin, created_at")
-    .order("product_name", { ascending: true });
-
-  if (error) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/products`);
+    if (!res.ok) {
+      throw new Error(`fetchProductsAction Error: ${res.statusText}`);
+    }
+    const data = await res.json();
+    return data as Product[];
+  } catch (error: any) {
     throw new Error("[fetchProductsAction] " + error.message);
   }
-  return (data as Product[]) ?? [];
 }
 
 // ──────────────────────────────────────────────────────────
 // 최신 리뷰 조회
 // ──────────────────────────────────────────────────────────
 export async function fetchLatestReviewsAction(limit = 20): Promise<Review[]> {
-  const supabase = getSupabase();
-  let allData: any[] = [];
-  let offset = 0;
-  const step = 1000;
-
-  while (allData.length < limit) {
-    const fetchCount = Math.min(step, limit - allData.length);
-    const { data, error } = await supabase
-      .from("reviews")
-      .select(REVIEW_SELECT)
-      .order("review_date", { ascending: false })
-      .range(offset, offset + fetchCount - 1);
-
-    if (error) {
-      throw new Error("[fetchLatestReviewsAction] " + error.message);
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/reviews?limit=${limit}`);
+    if (!res.ok) {
+      throw new Error(`fetchLatestReviewsAction Error: ${res.statusText}`);
     }
-    if (!data || data.length === 0) break;
-
-    allData = allData.concat(data);
-    offset += fetchCount;
+    const data = await res.json();
+    return data as Review[];
+  } catch (error: any) {
+    throw new Error("[fetchLatestReviewsAction] " + error.message);
   }
-
-  return (allData as unknown as Review[]) ?? [];
 }
 
 // ──────────────────────────────────────────────────────────
@@ -80,32 +52,20 @@ export async function fetchReviewsByKeywordsAction(
     return fetchLatestReviewsAction(limit);
   }
 
-  const supabase = getSupabase();
-  const orFilter = keywords.map((kw) => `review_text.ilike.%${kw}%`).join(",");
+  try {
+    const params = new URLSearchParams();
+    params.append("keywords", keywords.join(","));
+    params.append("limit", limit.toString());
 
-  let allData: any[] = [];
-  let offset = 0;
-  const step = 1000;
-
-  while (allData.length < limit) {
-    const fetchCount = Math.min(step, limit - allData.length);
-    const { data, error } = await supabase
-      .from("reviews")
-      .select(REVIEW_SELECT)
-      .or(orFilter)
-      .order("review_date", { ascending: false })
-      .range(offset, offset + fetchCount - 1);
-
-    if (error) {
-      throw new Error("[fetchReviewsByKeywordsAction] " + error.message);
+    const res = await fetch(`${API_BASE_URL}/api/reviews?${params.toString()}`);
+    if (!res.ok) {
+      throw new Error(`fetchReviewsByKeywordsAction Error: ${res.statusText}`);
     }
-    if (!data || data.length === 0) break;
-
-    allData = allData.concat(data);
-    offset += fetchCount;
+    const data = await res.json();
+    return data as Review[];
+  } catch (error: any) {
+    throw new Error("[fetchReviewsByKeywordsAction] " + error.message);
   }
-
-  return (allData as unknown as Review[]) ?? [];
 }
 
 // ──────────────────────────────────────────────────────────
@@ -118,17 +78,21 @@ export async function fetchReviewsByIdsAction(
     return [];
   }
 
-  const supabase = getSupabase();
-  const { data, error } = await supabase
-    .from("reviews")
-    .select(REVIEW_SELECT)
-    .in("id", ids)
-    .order("review_date", { ascending: false });
+  try {
+    const params = new URLSearchParams();
+    params.append("ids", ids.join(","));
 
-  if (error) {
+    const res = await fetch(`${API_BASE_URL}/api/reviews/batch?${params.toString()}`);
+    if (!res.ok) {
+      throw new Error(`fetchReviewsByIdsAction Error: ${res.statusText}`);
+    }
+    const data = await res.json();
+    return data as Review[];
+  } catch (error: any) {
+    // If backend doesn't support batch, fallback or error out. 
+    // Usually API endpoints can handle this via query params or a POST.
     throw new Error("[fetchReviewsByIdsAction] " + error.message);
   }
-  return (data as unknown as Review[]) ?? [];
 }
 
 // ──────────────────────────────────────────────────────────
@@ -138,30 +102,18 @@ export async function fetchReviewsByProductAction(
   productId: string,
   limit = 20
 ): Promise<Review[]> {
-  const supabase = getSupabase();
-  
-  let allData: any[] = [];
-  let offset = 0;
-  const step = 1000;
+  try {
+    const params = new URLSearchParams();
+    params.append("product_id", productId);
+    params.append("limit", limit.toString());
 
-  while (allData.length < limit) {
-    const fetchCount = Math.min(step, limit - allData.length);
-    const { data, error } = await supabase
-      .from("reviews")
-      .select(REVIEW_SELECT)
-      .eq("product_id", productId)
-      .order("review_date", { ascending: false })
-      .range(offset, offset + fetchCount - 1);
-
-    if (error) {
-      throw new Error("[fetchReviewsByProductAction] " + error.message);
+    const res = await fetch(`${API_BASE_URL}/api/reviews?${params.toString()}`);
+    if (!res.ok) {
+      throw new Error(`fetchReviewsByProductAction Error: ${res.statusText}`);
     }
-    if (!data || data.length === 0) break;
-
-    allData = allData.concat(data);
-    offset += fetchCount;
+    const data = await res.json();
+    return data as Review[];
+  } catch (error: any) {
+    throw new Error("[fetchReviewsByProductAction] " + error.message);
   }
-
-  return (allData as unknown as Review[]) ?? [];
 }
-
