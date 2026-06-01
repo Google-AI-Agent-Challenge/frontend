@@ -194,19 +194,46 @@ export async function POST(req: Request) {
 
     const analysis = normalizeAnalysis(rawAnalysis);
 
+    // 1. ENUM 안전 매핑 및 캐스팅
+    const sourceVal = ["youtube", "blog", "naver_store", "olive_young", "mock"].includes(engine.toLowerCase()) 
+      ? engine.toLowerCase() 
+      : "other";
+      
+    const reviewerTypeVal = ["general", "influencer", "expert"].includes(String(reviewer_type).toLowerCase())
+      ? String(reviewer_type).toLowerCase()
+      : "general";
+
+    const issueTypeMap: Record<string, string> = {
+      "피부 트러블": "irritation",
+      "홍조/붉어짐": "irritation",
+      "피부 자극": "irritation",
+      "향 불만": "scent",
+      "사용감 불만": "formulation",
+      "보습력 부족": "ingredients",
+      "패키징 불량": "container",
+      "가격 불만": "other",
+      "긍정 보습감": "formulation",
+      "긍정 진정 효과": "ingredients",
+      "긍정 재구매": "none",
+      "일반 의견": "none"
+    };
+    
+    const issueTypeRaw = String(analysis.issue_type).trim();
+    const issueTypeVal = issueTypeMap[issueTypeRaw] || "other";
+
+    // 2. reviews 테이블 insert (keywords 컬럼 배제)
     const { data, error } = await supabase
       .from("reviews")
       .insert({
         product_id,
-        source: engine,
-        reviewer_type: reviewer_type || "일반 사용자",
+        source: sourceVal,
+        reviewer_type: reviewerTypeVal,
         review_text,
         rating: Number(rating),
         review_date: new Date().toISOString().slice(0, 10),
         sentiment: analysis.sentiment,
         sentiment_score: analysis.sentiment_score,
-        keywords: analysis.keywords,
-        issue_type: analysis.issue_type,
+        issue_type: issueTypeVal,
         ai_summary: analysis.ai_summary,
       })
       .select()
@@ -214,6 +241,42 @@ export async function POST(req: Request) {
 
     if (error) {
       return NextResponse.json({ error: "Supabase insert failed", detail: error.message }, { status: 500 });
+    }
+
+    // 3. 다대다 키워드 관계 적재 (백그라운드에서 병렬 또는 안전 순차 실행)
+    if (data && Array.isArray(analysis.keywords)) {
+      for (const kw of analysis.keywords) {
+        if (kw && String(kw).trim()) {
+          const cleanKw = String(kw).trim();
+          
+          // A. 키워드 생성 시도 (중복 방지를 위한 upsert 또는 select)
+          const { data: kwData, error: kwErr } = await supabase
+            .from("keywords")
+            .upsert({ keyword: cleanKw }, { onConflict: "keyword" })
+            .select()
+            .single();
+            
+          if (kwData && !kwErr) {
+            // B. 다대다 매핑 등록
+            await supabase
+              .from("review_keywords")
+              .insert({ review_id: data.id, keyword_id: kwData.id });
+          } else {
+            // upsert 결과가 없거나 싱글 셀렉트 오류 시 조회 후 매핑 시도
+            const { data: existingKw } = await supabase
+              .from("keywords")
+              .select("id")
+              .eq("keyword", cleanKw)
+              .single();
+              
+            if (existingKw) {
+              await supabase
+                .from("review_keywords")
+                .insert({ review_id: data.id, keyword_id: existingKw.id });
+            }
+          }
+        }
+      }
     }
 
     return NextResponse.json({

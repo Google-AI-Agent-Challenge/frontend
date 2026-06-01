@@ -27,8 +27,8 @@ export async function GET() {
     .not("issue_type", "is", null);
 
   const { data: keywordsList } = await supabase
-    .from("reviews")
-    .select("keywords")
+    .from("review_keywords")
+    .select("keywords(keyword)")
     .not("keywords", "is", null);
 
   const { count: totalReviews } = await supabase
@@ -58,11 +58,10 @@ export async function GET() {
 
   const keywordStats: Record<string, number> = {};
   if (keywordsList) {
-    keywordsList.forEach((r) => {
-      if (Array.isArray(r.keywords)) {
-        r.keywords.forEach((kw: string) => {
-          keywordStats[kw] = (keywordStats[kw] || 0) + 1;
-        });
+    keywordsList.forEach((r: any) => {
+      const kw = r.keywords?.keyword;
+      if (kw) {
+        keywordStats[kw] = (keywordStats[kw] || 0) + 1;
       }
     });
   }
