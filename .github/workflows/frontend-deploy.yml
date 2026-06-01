@@ -23,4 +23,8 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Submit Cloud Build
-        run: gcloud builds submit --config cloudbuild.yaml --substitutions=COMMIT_SHA=${{ github.sha }} .
+        run: |
+          gcloud builds submit \
+            --config cloudbuild.yaml \
+            --substitutions=COMMIT_SHA=${{ github.sha }},_NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }},_NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }},_NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }} \
+            .
