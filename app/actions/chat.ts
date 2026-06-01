@@ -72,10 +72,14 @@ export async function sendMessage(userInput: string): Promise<AiResponse> {
         rating,
         review_date,
         sentiment,
-        keywords,
         issue_type,
         products!inner (
           product_name
+        ),
+        review_keywords (
+          keywords (
+            keyword
+          )
         )
       `)
       .order("review_date", { ascending: false });
@@ -111,7 +115,7 @@ export async function sendMessage(userInput: string): Promise<AiResponse> {
     // Fallback: 결과가 0개일 경우, 키워드가 너무 빡빡할 수 있으므로 키워드 필터를 풀고 다시 조회
     if ((!rawReviews || rawReviews.length === 0) && filters.keywords && filters.keywords.length > 0) {
       console.log("[chat action] 필터 매칭 결과 0개. 키워드를 제외하고 다시 검색합니다.");
-      let fallbackQuery = supabase.from("reviews").select(`id, review_text, rating, review_date, sentiment, keywords, issue_type, products!inner(product_name)`).order("review_date", { ascending: false }).limit(200);
+      let fallbackQuery = supabase.from("reviews").select(`id, review_text, rating, review_date, sentiment, issue_type, products!inner(product_name), review_keywords(keywords(keyword))`).order("review_date", { ascending: false }).limit(200);
       if (filters.productName) {
         const cleanName = filters.productName.replace(/패드|pad/gi, "").trim();
         if (cleanName) fallbackQuery = fallbackQuery.ilike("products.product_name", `%${cleanName}%`);
@@ -131,16 +135,21 @@ export async function sendMessage(userInput: string): Promise<AiResponse> {
     const reviews = (rawReviews as any[]) ?? [];
     
     // 프롬프트에 주입할 컨텍스트 생성 (토큰 수 최적화)
-    const formattedReviews = reviews.map((r, index) => ({
-      _id: String(index),
-      date: r.review_date,
-      product: r.products?.product_name || "알수없음",
-      rating: r.rating,
-      sentiment: r.sentiment,
-      text: r.review_text,
-      keywords: r.keywords,
-      issue: r.issue_type
-    }));
+    const formattedReviews = reviews.map((r, index) => {
+      const kws = r.review_keywords
+        ? (r.review_keywords as any[]).map((rk: any) => rk.keywords?.keyword).filter(Boolean)
+        : [];
+      return {
+        _id: String(index),
+        date: r.review_date,
+        product: r.products?.product_name || "알수없음",
+        rating: r.rating,
+        sentiment: r.sentiment,
+        text: r.review_text,
+        keywords: kws,
+        issue: r.issue_type
+      };
+    });
 
     const reviewsContext = JSON.stringify(formattedReviews);
     console.log(`[chat action] 쿼리 결과 ${reviews.length}건을 바탕으로 요약 시작...`);
