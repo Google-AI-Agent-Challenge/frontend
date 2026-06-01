@@ -1,0 +1,59 @@
+name: CI — TONES Frontend
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  type-check:
+    name: 🔍 TypeScript 타입 검사
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci --frozen-lockfile
+
+      - name: Run TypeScript Type Check
+        run: npx tsc --noEmit
+
+  lint:
+    name: 🧹 ESLint 정적 분석
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci --frozen-lockfile
+
+      - name: Run ESLint
+        run: npm run lint
+
+  docker-check:
+    name: 🐳 Docker 빌드 검증 (Dry-Run)
+    runs-on: ubuntu-latest
+    needs: [type-check, lint]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image (Dry-Run)
+        run: docker build --no-cache -t tones-frontend:test .
