@@ -39,16 +39,6 @@ steps:
       '--memory', '512Mi',
     ]
 
-  # 4. 퍼블릭 접근 허용 (IAM 바인딩)
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
-    args: [
-      'run', 'services', 'add-iam-policy-binding', 'tones-frontend',
-      '--region', 'us-central1',
-      '--member', 'allUsers',
-      '--role', 'roles/run.invoker',
-    ]
-
 images:
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/tones-repo/tones-frontend:latest'
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/tones-repo/tones-frontend:$COMMIT_SHA'
