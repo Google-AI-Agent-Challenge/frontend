@@ -692,19 +692,29 @@ export default function AnalyticsPanel({
                       transition: "all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1)", // 더 부드럽고 텐션 있는 애니메이션
                     }}
                     onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-3px) scale(1.02)";
-                      (e.currentTarget as HTMLButtonElement).style.background = "#24242a";
-                      (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 16px rgba(0, 0, 0, 0.4)";
+                      (e.currentTarget as HTMLButtonElement).style.transform =
+                        "translateY(-3px) scale(1.02)";
+                      (e.currentTarget as HTMLButtonElement).style.background =
+                        "#24242a";
+                      (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                        "0 8px 16px rgba(0, 0, 0, 0.4)";
                       if (!isActive) {
-                        (e.currentTarget as HTMLButtonElement).style.borderColor = "#4a4a55";
+                        (
+                          e.currentTarget as HTMLButtonElement
+                        ).style.borderColor = "#4a4a55";
                       }
                     }}
                     onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0) scale(1)";
-                      (e.currentTarget as HTMLButtonElement).style.background = "#1a1a1f";
-                      (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
+                      (e.currentTarget as HTMLButtonElement).style.transform =
+                        "translateY(0) scale(1)";
+                      (e.currentTarget as HTMLButtonElement).style.background =
+                        "#1a1a1f";
+                      (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                        "none";
                       if (!isActive) {
-                        (e.currentTarget as HTMLButtonElement).style.borderColor = "#2a2a2e";
+                        (
+                          e.currentTarget as HTMLButtonElement
+                        ).style.borderColor = "#2a2a2e";
                       }
                     }}
                   >

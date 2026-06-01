@@ -1,15 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --background: #121214;
-  --foreground: #e8e8ec;
-  --pink: #FF5E84;
-  --pink-dim: #ff5e8422;
-  --border: #2a2a2e;
-  --card: #1a1a1f;
-  --card-hover: #1f1f25;
-  --muted: #6b6b7a;
-  --muted-fg: #9999aa;
+  --background: #f4f5f7;
+  --foreground: #111827;
+  --pink: #ff477e;
+  --pink-dim: #ff477e22;
+  --border: #e5e7eb;
+  --card: #ffffff;
+  --card-hover: #f9fafb;
+  --muted: #9ca3af;
+  --muted-fg: #6b7280;
+  --orange: #f97316;
 }
 
 @theme inline {
@@ -19,6 +20,7 @@
   --color-border: var(--border);
   --color-card: var(--card);
   --color-muted: var(--muted);
+  --color-orange: var(--orange);
 }
 
 * {
