@@ -17,7 +17,7 @@ const API_BASE_URL = process.env.API_URL ?? "http://localhost:8000";
 // ──────────────────────────────────────────────────────────
 export async function fetchProductsAction(): Promise<Product[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/products`);
+    const res = await fetch(`${API_BASE_URL}/api/products/list`);
     if (!res.ok) {
       throw new Error(`fetchProductsAction Error: ${res.statusText}`);
     }
