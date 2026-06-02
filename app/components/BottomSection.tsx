@@ -1,64 +1,115 @@
 "use client";
 
 import React from "react";
+import type { DashboardInsights } from "../types";
 
-export default function BottomSection() {
+interface BottomSectionProps {
+  insights: DashboardInsights | null;
+  aiBriefing: string;
+}
+
+interface InsightCard {
+  label: string;
+  score: number;
+  change: number;
+  positiveColor: string;
+  negativeColor: string;
+}
+
+function buildInsightCards(insights: DashboardInsights): InsightCard[] {
+  return [
+    {
+      label: "성분 및 피부 진정",
+      score: insights.ingredients.score,
+      change: insights.ingredients.change,
+      positiveColor: "#3B8026",
+      negativeColor: "#B7064B",
+    },
+    {
+      label: "제형 흡수력 및 발림성",
+      score: insights.formulation.score,
+      change: insights.formulation.change,
+      positiveColor: "#3B8026",
+      negativeColor: "#B7064B",
+    },
+    {
+      label: "용기 불량 및 편리성",
+      score: insights.container.score,
+      change: insights.container.change,
+      positiveColor: "#3B8026",
+      negativeColor: "#B22121",
+    },
+  ];
+}
+
+function parseBriefingSections(text: string): { positive: string; issue: string } {
+  if (!text) return { positive: "", issue: "" };
+
+  const positiveMatch = text.match(/긍정[^:：\n]*[:：]?\s*([^\n#]+)/i);
+  const issueMatch = text.match(/(?:이슈|핵심|긴급|위험|부정)[^:：\n]*[:：]?\s*([^\n#]+)/i);
+
+  return {
+    positive: positiveMatch?.[1]?.trim() ?? text.slice(0, 80),
+    issue: issueMatch?.[1]?.trim() ?? text.slice(80, 160) || text.slice(0, 80),
+  };
+}
+
+export default function BottomSection({ insights, aiBriefing }: BottomSectionProps) {
+  const cards = insights ? buildInsightCards(insights) : null;
+  const briefing = parseBriefingSections(aiBriefing);
+
   return (
     <div className="flex gap-6 pb-12">
-      {/* 좌측: 주요 분석 리스트 (가로 비율을 더 넓게) */}
+      {/* 좌측: 주요 분석 리스트 */}
       <div className="flex-[2.2] flex flex-col gap-3">
         <h3 className="text-[24px] font-bold text-gray-900 tracking-tight pl-1">
           주요 분석 리스트
         </h3>
         <div className="flex flex-col gap-5">
-          {/* Card 1 */}
-          <div className="bg-white rounded-2xl p-7 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col gap-3 transition-transform hover:-translate-y-1 duration-300 cursor-pointer">
-            <div className="flex gap-2">
-              <span className="bg-[#B7064B] text-white text-[16px] font-bold px-4 py-1 rounded-full shadow-sm">
-                #따가움
-              </span>
-              <span className="bg-[#B7064B] text-white text-[16px] font-bold px-4 py-1 rounded-full shadow-sm">
-                #좁쌀
-              </span>
-              <span className="bg-[#B7064B] text-white text-[16px] font-bold px-4 py-1 rounded-full shadow-sm">
-                #민감성피부
-              </span>
+          {!cards ? (
+            <div className="bg-white rounded-2xl p-7 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100">
+              <p className="text-gray-400 text-[18px]">데이터 로딩 중...</p>
             </div>
-            <h4 className="text-[24px] font-bold text-gray-900 mt-2 tracking-tight">
-              당근 패드 트러블 언급 증가{" "}
-              <span className="text-[#B7064B]">+12.8%</span>
-            </h4>
-            <p className="text-[20px] text-gray-700 leading-[1.6] font-medium tracking-tight">
-              지난 3일간 민감성 피부 타입을 가진 사용자들 사이에서{" "}
-              <span className="text-[#B7064B] font-bold">따가움</span>과{" "}
-              <span className="text-[#B7064B] font-bold">좁쌀</span> 키워드
-              언급이 급증했습니다.
-              <br />
-              주로 환절기 외부 환경 변화와 관련된 피드백으로 분석됩니다.
-            </p>
-          </div>
-
-          {/* Card 2 */}
-          <div className="bg-white rounded-2xl p-7 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col gap-3 transition-transform hover:-translate-y-1 duration-300 cursor-pointer">
-            <div className="flex gap-2">
-              <span className="bg-[#3B8026] text-white text-[16px] font-bold px-4 py-1 rounded-full shadow-sm">
-                #진정
-              </span>
-              <span className="bg-[#3B8026] text-white text-[16px] font-bold px-4 py-1 rounded-full shadow-sm">
-                #수부지피부
-              </span>
-            </div>
-            <h4 className="text-[24px] font-bold text-gray-900 mt-2 tracking-tight">
-              미나리 패드 진정 효과 만족도 상승{" "}
-              <span className="text-[#3B8026]">+21.6%</span>
-            </h4>
-            <p className="text-[20px] text-gray-700 leading-[1.6] font-medium tracking-tight">
-              붉은기 <span className="text-[#3B8026] font-bold">진정</span> 및{" "}
-              <span className="text-[#3B8026] font-bold">쿨링</span> 효과에 대한
-              구체적인 칭찬 리뷰가 다수 포착되었습니다. 인플루언서 마케팅 캠페인
-              시점과 맞물려 긍정 바이럴이 형성되고 있습니다
-            </p>
-          </div>
+          ) : (
+            cards.map((card) => {
+              const isPositive = card.change >= 0;
+              const accentColor = isPositive ? card.positiveColor : card.negativeColor;
+              const changeSign = isPositive ? "+" : "";
+              return (
+                <div
+                  key={card.label}
+                  className="bg-white rounded-2xl p-7 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col gap-3 transition-transform hover:-translate-y-1 duration-300 cursor-pointer"
+                >
+                  <div className="flex gap-2">
+                    <span
+                      className="text-white text-[16px] font-bold px-4 py-1 rounded-full shadow-sm"
+                      style={{ backgroundColor: accentColor }}
+                    >
+                      #{card.label}
+                    </span>
+                  </div>
+                  <h4 className="text-[24px] font-bold text-gray-900 mt-2 tracking-tight">
+                    {card.label} 만족도{" "}
+                    <span style={{ color: accentColor }}>
+                      {changeSign}{card.change.toFixed(1)}%p
+                    </span>
+                  </h4>
+                  <p className="text-[20px] text-gray-700 leading-[1.6] font-medium tracking-tight">
+                    현재 점수{" "}
+                    <span className="font-bold" style={{ color: accentColor }}>
+                      {card.score.toFixed(1)}%
+                    </span>
+                    {" — "}
+                    전기 대비{" "}
+                    <span className="font-bold" style={{ color: accentColor }}>
+                      {changeSign}{card.change.toFixed(1)}%p
+                    </span>{" "}
+                    변동했습니다.
+                  </p>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 
@@ -75,8 +126,7 @@ export default function BottomSection() {
               긍정 시그널
             </h5>
             <p className="text-[20px] text-gray-500 leading-[1.6] font-medium mt-1">
-              여름 시즌을 맞아 쿨링 효과를 강조한 제품군의 리뷰 참여율이 전주
-              대비 15% 상승했습니다.
+              {briefing.positive || "데이터 로딩 중..."}
             </p>
           </div>
 
@@ -86,8 +136,7 @@ export default function BottomSection() {
               오늘의 핵심 이슈
             </h5>
             <p className="text-[20px] text-gray-500 leading-[1.6] font-medium mt-1">
-              &apos;당근 패드&apos; 라인의 초기 트러블 반응 모니터링이 시급합니다. CS 대응
-              매뉴얼 점검을 권장합니다.
+              {briefing.issue || "데이터 로딩 중..."}
             </p>
           </div>
 

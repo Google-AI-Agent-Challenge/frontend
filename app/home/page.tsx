@@ -5,44 +5,56 @@ import KpiCards from "../components/KpiCards";
 import MiddleCharts from "../components/MiddleCharts";
 import BottomSection from "../components/BottomSection";
 
-import { fetchReviewsCountAction, fetchReviewsPageAction } from "../actions/data";
-import type { Review } from "../types";
-
-const CHUNK_SIZE = 500;
+import {
+  fetchDashboardSummaryAction,
+  fetchTrendingKeywordsAction,
+  fetchNegativeTrendAction,
+  fetchDashboardInsightsAction,
+  fetchAiBriefingAction,
+} from "../actions/data";
+import type {
+  DashboardSummary,
+  TrendingKeyword,
+  NegativeTrendEntry,
+  DashboardInsights,
+} from "../types";
 
 export default function DashboardPage() {
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [keywords, setKeywords] = useState<TrendingKeyword[]>([]);
+  const [negativeTrend, setNegativeTrend] = useState<NegativeTrendEntry[]>([]);
+  const [insights, setInsights] = useState<DashboardInsights | null>(null);
+  const [aiBriefing, setAiBriefing] = useState<string>("");
 
   useEffect(() => {
-    async function loadAllReviews() {
+    async function loadDashboard() {
       try {
-        const { total } = await fetchReviewsCountAction();
-        if (total === 0) return;
+        const [summaryData, keywordsData, trendData, insightsData, briefingData] =
+          await Promise.all([
+            fetchDashboardSummaryAction(),
+            fetchTrendingKeywordsAction(),
+            fetchNegativeTrendAction(),
+            fetchDashboardInsightsAction(),
+            fetchAiBriefingAction(),
+          ]);
 
-        const totalChunks = Math.ceil(total / CHUNK_SIZE);
-        const chunkRequests = Array.from({ length: totalChunks }, (_, i) =>
-          fetchReviewsPageAction(i + 1, CHUNK_SIZE)
-        );
-
-        const chunks = await Promise.all(chunkRequests);
-        setReviews(chunks.flat());
+        setSummary(summaryData);
+        setKeywords(keywordsData);
+        setNegativeTrend(trendData);
+        setInsights(insightsData);
+        setAiBriefing(briefingData);
       } catch (err: unknown) {
-        console.error("리뷰 데이터 로드 오류:", err);
+        console.error("대시보드 데이터 로드 오류:", err);
       }
     }
-    loadAllReviews();
+    loadDashboard();
   }, []);
 
   return (
     <div className="flex-1 flex flex-col p-10 overflow-y-auto w-full h-full">
-      {/* Phase 2: 상단 KPI 카드 컴포넌트 */}
-      <KpiCards reviews={reviews} />
-
-      {/* Phase 3: 중앙 차트 영역 */}
-      <MiddleCharts />
-
-      {/* Phase 4: 하단 분석 리스트 & AI 우측 패널 */}
-      <BottomSection />
+      <KpiCards summary={summary} />
+      <MiddleCharts keywords={keywords} negativeTrend={negativeTrend} />
+      <BottomSection insights={insights} aiBriefing={aiBriefing} />
     </div>
   );
 }
