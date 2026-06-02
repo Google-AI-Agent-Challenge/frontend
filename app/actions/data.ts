@@ -17,7 +17,7 @@ import type {
 // "use server" Server Action은 Node.js 서버에서만 실행되므로
 // 빌드 타임에 번들에 인라인되는 NEXT_PUBLIC_* 대신
 // 런타임에 주입되는 서버 전용 환경변수를 사용한다.
-const API_BASE_URL = process.env.API_URL ?? "http://localhost:8000";
+const API_BASE_URL = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 // ──────────────────────────────────────────────────────────
 // 제품 목록 조회
