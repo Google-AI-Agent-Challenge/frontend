@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // 유틸리티 스크립트 (CommonJS, 앱 번들 외부)
+    "find_services.js",
+    "list_app_files.js",
   ]),
 ]);
 

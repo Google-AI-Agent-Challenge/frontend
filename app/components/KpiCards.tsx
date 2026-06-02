@@ -2,42 +2,30 @@
 
 import { useState, useEffect } from "react";
 import { Calendar, Filter } from "lucide-react";
-import type { Review } from "../types";
-import { fetchLatestReviewsAction, fetchReviewsByProductAction } from "../actions/data";
+import type { DashboardSummary } from "../types";
 
 interface KpiCardsProps {
+  summary: DashboardSummary | null;
   period: number;
   setPeriod: (val: number) => void;
   productId: string;
   setProductId: (val: string) => void;
 }
 
+function formatDiff(value: number, unit = "건"): string {
+  const sign = value >= 0 ? "+" : "";
+  return `(${sign}${value}${unit})`;
+}
+
 export default function KpiCards({
+  summary,
   period,
   setPeriod,
   productId,
   setProductId,
 }: KpiCardsProps) {
-  const [reviews, setReviews] = useState<Review[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
-
-  useEffect(() => {
-    async function loadData() {
-      try {
-        let data: Review[] = [];
-        if (productId === "all") {
-          data = await fetchLatestReviewsAction(10000);
-        } else {
-          data = await fetchReviewsByProductAction(productId, 10000);
-        }
-        setReviews(data);
-      } catch (err) {
-        console.error("Failed to load reviews in KpiCards:", err);
-      }
-    }
-    loadData();
-  }, [period, productId]);
 
   useEffect(() => {
     async function fetchProducts() {
@@ -76,32 +64,20 @@ export default function KpiCards({
     return productId;
   };
 
-  // 실제 데이터 기반으로 계산 (리뷰가 없으면 기본값 0)
-  const totalReviews = reviews.length;
-  const negativeReviews = reviews.filter(
-    (r) => r.sentiment === "negative",
-  ).length;
+  const totalReviews = summary?.total_reviews ?? 0;
+  const avgRating = summary ? summary.average_rating.toFixed(2) : "0.00";
+  const negativeReviews = summary?.negative_reviews_count ?? 0;
+  const priorityReviews = summary?.priority_reviews_count ?? 0;
 
-  const avgRating =
-    totalReviews > 0
-      ? (reviews.reduce((acc, r) => acc + r.rating, 0) / totalReviews).toFixed(
-          2,
-        )
-      : "0.00";
-
-  // 우선 확인 리뷰 (이슈 타입에 불량, 파손 등이 있거나 1~2점 리뷰)
-  const priorityReviews = reviews.filter(
-    (r) =>
-      r.issue_type?.includes("불량") ||
-      r.review_text.includes("파손") ||
-      r.rating <= 2,
-  ).length;
+  const totalDiff = summary?.total_reviews_diff ?? 0;
+  const ratingDiff = summary?.average_rating_diff ?? 0;
+  const negativeDiff = summary?.negative_reviews_rate_diff ?? 0;
 
   return (
     <div className="flex flex-col gap-5 mb-8">
       {/* 타이틀 및 상단 헤더 */}
       <div className="flex justify-between items-center">
-        <h2 className="text-[28px] font-bold text-gray-900 tracking-tight pl-1 ">
+        <h2 className="text-[28px] font-bold text-gray-900 tracking-tight pl-1">
           리뷰 종합 요약
         </h2>
         <div className="flex gap-3">
@@ -150,59 +126,54 @@ export default function KpiCards({
         </div>
       </div>
 
-      {/* --- 리뷰 수 카드 --- */}
       <div className="grid grid-cols-4 gap-5">
         {/* 전체 리뷰 */}
         <div className="bg-white rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col gap-3 transition-transform hover:-translate-y-1 duration-300">
-          <span className="text-[24px] font-semibold text-gray-800">
-            전체 리뷰
-          </span>
+          <span className="text-[24px] font-semibold text-gray-800">전체 리뷰</span>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-extrabold text-gray-900 tracking-tight">
-              {totalReviews > 0 ? totalReviews.toLocaleString() : "0"}건
+              {totalReviews.toLocaleString()}건
             </span>
-            <span className="text-sm font-semibold text-gray-500">(+86)</span>
+            <span className="text-sm font-semibold text-gray-500">
+              {formatDiff(totalDiff)}
+            </span>
           </div>
         </div>
 
         {/* 평균 별점 */}
         <div className="bg-white rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col gap-3 transition-transform hover:-translate-y-1 duration-300">
-          <span className="text-[24px] font-semibold text-gray-800">
-            평균 별점
-          </span>
+          <span className="text-[24px] font-semibold text-gray-800">평균 별점</span>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-extrabold text-gray-900 tracking-tight">
-              {totalReviews > 0 ? avgRating : "4.12"}
+              {avgRating}
             </span>
-            <span className="text-[15px] font-semibold text-gray-400">
-              / 5.00
+            <span className="text-[15px] font-semibold text-gray-400">/ 5.00</span>
+            <span className="text-sm font-semibold text-gray-500">
+              {formatDiff(ratingDiff, "점")}
             </span>
           </div>
         </div>
 
         {/* 부정 리뷰 */}
         <div className="bg-white rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col gap-3 transition-transform hover:-translate-y-1 duration-300">
-          <span className="text-[24px] font-semibold text-gray-800">
-            부정 리뷰
-          </span>
+          <span className="text-[24px] font-semibold text-gray-800">부정 리뷰</span>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-extrabold text-[#B22121] tracking-tight">
-              {totalReviews > 0 ? negativeReviews.toLocaleString() : "184"}건
+              {negativeReviews.toLocaleString()}건
             </span>
-            <span className="text-sm font-bold text-[#B22121]">(+20)</span>
+            <span className="text-sm font-bold text-[#B22121]">
+              ({negativeDiff >= 0 ? "+" : ""}{negativeDiff}%p)
+            </span>
           </div>
         </div>
 
         {/* 우선 확인 리뷰 */}
         <div className="bg-white rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col gap-3 transition-transform hover:-translate-y-1 duration-300">
-          <span className="text-[24px] font-semibold text-gray-800">
-            우선 확인 리뷰
-          </span>
+          <span className="text-[24px] font-semibold text-gray-800">우선 확인 리뷰</span>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-extrabold text-[#E88700] tracking-tight">
-              {totalReviews > 0 ? priorityReviews.toLocaleString() : "3"}건
+              {priorityReviews.toLocaleString()}건
             </span>
-            <span className="text-sm font-bold text-[#E88700]">(+1)</span>
           </div>
         </div>
       </div>

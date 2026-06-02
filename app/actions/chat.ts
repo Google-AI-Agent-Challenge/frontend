@@ -85,6 +85,7 @@ export async function sendMessage(userInput: string): Promise<AiResponse> {
     }
     params.append("limit", "300");
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let rawReviews: any[] = [];
     try {
       const res = await fetch(`${API_BASE_URL}/api/reviews?${params.toString()}`);
@@ -93,8 +94,8 @@ export async function sendMessage(userInput: string): Promise<AiResponse> {
       } else {
         console.error("[chat action] API 조회 실패:", res.statusText);
       }
-    } catch (fetchError: any) {
-      console.error("[chat action] API fetch 오류:", fetchError.message);
+    } catch (fetchError: unknown) {
+      console.error("[chat action] API fetch 오류:", fetchError);
     }
 
     // Fallback: 결과가 0개일 경우, 키워드가 너무 빡빡할 수 있으므로 키워드 필터를 풀고 다시 조회
@@ -122,8 +123,8 @@ export async function sendMessage(userInput: string): Promise<AiResponse> {
         if (res.ok) {
           rawReviews = await res.json();
         }
-      } catch (fallbackError: any) {
-        console.error("[chat action] API fallback fetch 오류:", fallbackError.message);
+      } catch (fallbackError: unknown) {
+        console.error("[chat action] API fallback fetch 오류:", fallbackError);
       }
     }
 
@@ -135,7 +136,7 @@ export async function sendMessage(userInput: string): Promise<AiResponse> {
       if (Array.isArray(r.keywords)) {
         kws = r.keywords;
       } else if (r.review_keywords) {
-        kws = (r.review_keywords as any[]).map((rk: any) => rk.keywords?.keyword).filter(Boolean);
+        kws = (r.review_keywords as { keywords?: { keyword?: string } }[]).map((rk) => rk.keywords?.keyword).filter((k): k is string => Boolean(k));
       }
       return {
         _id: String(index),
@@ -266,10 +267,11 @@ ${userInput}
         matchedReviewIds: [],
       };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[chat action] Gemini API 오류:", error);
+    const errMsg = error instanceof Error ? error.message : String(error);
     return {
-      answer: `AI 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요. (에러: ${error.message})`,
+      answer: `AI 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요. (에러: ${errMsg})`,
       keywords: extractKeywordsFallback(userInput),
       risingKeyword: undefined,
       tags: [],

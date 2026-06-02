@@ -1,9 +1,9 @@
 steps:
   # 1. Artifact Registry에 업로드할 Docker 이미지 빌드
+  # API_URL은 런타임 env var로 주입되므로 build-arg 불필요
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'build',
-      '--build-arg', 'NEXT_PUBLIC_API_URL=$_NEXT_PUBLIC_API_URL',
       '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/tones-repo/tones-frontend:latest',
       '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/tones-repo/tones-frontend:$COMMIT_SHA',
       '.'
@@ -35,6 +35,7 @@ steps:
       '--max-instances', '3',
       '--cpu', '1',
       '--memory', '512Mi',
+      '--set-env-vars', 'API_URL=$_API_URL',
     ]
 
 images:

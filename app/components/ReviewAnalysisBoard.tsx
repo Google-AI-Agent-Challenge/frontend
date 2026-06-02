@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Download, Search, Star, Filter, Sparkles, Image as ImageIcon } from "lucide-react";
+import { Download, Search, Star, Sparkles, Image as ImageIcon } from "lucide-react";
 import type { Review, Product } from "../types";
 
 interface ReviewAnalysisBoardProps {
@@ -34,7 +34,7 @@ export default function ReviewAnalysisBoard({
       const matchSentiment = sentimentFilter === "all" || r.sentiment === sentimentFilter;
       const matchSearch =
         !searchQuery ||
-        r.review_text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        r.review_text?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         r.keywords?.some((k) => k.toLowerCase().includes(searchQuery.toLowerCase()));
       return matchProduct && matchSentiment && matchSearch;
     });
@@ -110,7 +110,7 @@ export default function ReviewAnalysisBoard({
     rating: r.rating || 5,
     skinType: r.reviewer_type || "복합성 피부",
     productName: r.products?.product_name || "알 수 없는 제품",
-    text: r.review_text,
+    text: r.review_text || "",
     hashtags: r.keywords || [],
     date: r.review_date || new Date().toLocaleDateString(),
   })) : dummyReviews;
@@ -167,15 +167,17 @@ export default function ReviewAnalysisBoard({
         <div className="flex flex-col gap-2 flex-[1.5]">
           <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Sentiment</label>
           <div className="flex bg-gray-50 rounded-xl p-1.5 border border-gray-200">
-            {[
-              { id: "all", label: "전체" },
-              { id: "positive", label: "긍정" },
-              { id: "neutral", label: "중립" },
-              { id: "negative", label: "부정" },
-            ].map((tab) => (
+            {(
+              [
+                { id: "all", label: "전체" },
+                { id: "positive", label: "긍정" },
+                { id: "neutral", label: "중립" },
+                { id: "negative", label: "부정" },
+              ] as { id: "all" | "positive" | "neutral" | "negative"; label: string }[]
+            ).map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setSentimentFilter(tab.id as any)}
+                onClick={() => setSentimentFilter(tab.id)}
                 className={`flex-1 text-sm font-bold py-2 rounded-lg transition-all ${
                   sentimentFilter === tab.id
                     ? "bg-[#F9A2C0] text-white shadow-sm"
