@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Download, Search, Star, Filter, Sparkles, Image as ImageIcon } from "lucide-react";
+import { Download, Search, Star, Sparkles, Image as ImageIcon } from "lucide-react";
 import type { Review, Product } from "../types";
 
 interface ReviewAnalysisBoardProps {
@@ -167,15 +167,17 @@ export default function ReviewAnalysisBoard({
         <div className="flex flex-col gap-2 flex-[1.5]">
           <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Sentiment</label>
           <div className="flex bg-gray-50 rounded-xl p-1.5 border border-gray-200">
-            {[
-              { id: "all", label: "전체" },
-              { id: "positive", label: "긍정" },
-              { id: "neutral", label: "중립" },
-              { id: "negative", label: "부정" },
-            ].map((tab) => (
+            {(
+              [
+                { id: "all", label: "전체" },
+                { id: "positive", label: "긍정" },
+                { id: "neutral", label: "중립" },
+                { id: "negative", label: "부정" },
+              ] as { id: "all" | "positive" | "neutral" | "negative"; label: string }[]
+            ).map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setSentimentFilter(tab.id as any)}
+                onClick={() => setSentimentFilter(tab.id)}
                 className={`flex-1 text-sm font-bold py-2 rounded-lg transition-all ${
                   sentimentFilter === tab.id
                     ? "bg-[#F9A2C0] text-white shadow-sm"

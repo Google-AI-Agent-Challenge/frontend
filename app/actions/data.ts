@@ -24,7 +24,7 @@ export async function fetchProductsAction(): Promise<Product[]> {
     }
     const data = await res.json();
     return data as Product[];
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[fetchProductsAction]", error.message);
     return [];
   }
@@ -42,7 +42,7 @@ export async function fetchReviewsCountAction(): Promise<{ total: number }> {
     }
     const data = await res.json();
     return data as { total: number };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[fetchReviewsCountAction]", error.message);
     return { total: 0 };
   }
@@ -60,7 +60,7 @@ export async function fetchReviewsPageAction(page = 1, limit = 500): Promise<Rev
     }
     const data = await res.json();
     return data as Review[];
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[fetchReviewsPageAction]", error.message);
     return [];
   }
@@ -78,7 +78,7 @@ export async function fetchLatestReviewsAction(limit = 20): Promise<Review[]> {
     }
     const data = await res.json();
     return data as Review[];
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[fetchLatestReviewsAction]", error.message);
     return [];
   }
@@ -107,7 +107,7 @@ export async function fetchReviewsByKeywordsAction(
     }
     const data = await res.json();
     return data as Review[];
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[fetchReviewsByKeywordsAction]", error.message);
     return [];
   }
@@ -133,7 +133,7 @@ export async function fetchReviewsByIdsAction(
     }
     const data = await res.json();
     return data as Review[];
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[fetchReviewsByIdsAction]", error.message);
     return [];
   }
@@ -157,7 +157,7 @@ export async function fetchReviewsByProductAction(
     }
     const data = await res.json();
     return data as Review[];
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[fetchReviewsByProductAction]", error.message);
     return [];
   }

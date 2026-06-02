@@ -9,31 +9,38 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import type { TooltipProps } from "recharts";
+
+interface TrendEntry {
+  name: string;
+  percent: number;
+  count: number;
+}
+
+function CustomTooltip({ active, payload }: TooltipProps<number, string>) {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload as TrendEntry;
+    return (
+      <div className="bg-white px-3 py-2 rounded-lg shadow-md border border-gray-100 flex flex-col items-center">
+        <p className="text-[#B22121] font-bold text-[13px] tracking-tight">
+          {data.percent}%{" "}
+          <span className="text-gray-500 font-medium ml-1">
+            (총 {data.count}건)
+          </span>
+        </p>
+      </div>
+    );
+  }
+  return null;
+}
 
 export default function MiddleCharts() {
-  const negativeReviewTrend = [
+  const negativeReviewTrend: TrendEntry[] = [
     { name: "05/11", percent: 9.8, count: 32 },
     { name: "05/18", percent: 10.7, count: 38 },
     { name: "05/25", percent: 12.6, count: 45 },
     { name: "06/01", percent: 14.7, count: 53 },
   ];
-
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-white px-3 py-2 rounded-lg shadow-md border border-gray-100 flex flex-col items-center">
-          <p className="text-[#B22121] font-bold text-[13px] tracking-tight">
-            {data.percent}%{" "}
-            <span className="text-gray-500 font-medium ml-1">
-              (총 {data.count}건)
-            </span>
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   const trendingKeywords = [
     {

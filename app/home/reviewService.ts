@@ -29,7 +29,7 @@ export async function fetchReviewsByKeywords(
     }
     const data = await response.json();
     return data as Review[];
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[reviewService] fetchReviewsByKeywords 오류:", error.message);
     return [];
   }
@@ -43,7 +43,7 @@ export async function fetchLatestReviews(limit: number = 20): Promise<Review[]> 
     }
     const data = await response.json();
     return data as Review[];
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[reviewService] fetchLatestReviews 오류:", error.message);
     return [];
   }
@@ -61,7 +61,7 @@ export async function fetchProducts(category?: string): Promise<Product[]> {
     }
     const data = await response.json();
     return data as Product[];
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[reviewService] fetchProducts 오류:", error.message);
     return [];
   }
@@ -82,7 +82,7 @@ export async function fetchReviewsByProduct(
     }
     const data = await response.json();
     return data as Review[];
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[reviewService] fetchReviewsByProduct 오류:", error.message);
     return [];
   }

@@ -3,20 +3,14 @@
 import React, { useState } from "react";
 import { MoreHorizontal, RefreshCw } from "lucide-react";
 
-export default function SettingsPage() {
-  const [notifyRisk, setNotifyRisk] = useState(true);
-  const [notifyDaily, setNotifyDaily] = useState(true);
-  const [notifySystem, setNotifySystem] = useState(false);
-
-  const [lang, setLang] = useState<"ko" | "en">("ko");
-
-  const Toggle = ({
-    active,
-    onClick,
-  }: {
-    active: boolean;
-    onClick: () => void;
-  }) => (
+function Toggle({
+  active,
+  onClick,
+}: {
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
     <button
       onClick={onClick}
       className={`w-12 h-6 rounded-full flex items-center px-0.5 transition-colors duration-200 ease-in-out cursor-pointer ${active ? "bg-[#F9A2C0]" : "bg-gray-200"}`}
@@ -26,6 +20,14 @@ export default function SettingsPage() {
       />
     </button>
   );
+}
+
+export default function SettingsPage() {
+  const [notifyRisk, setNotifyRisk] = useState(true);
+  const [notifyDaily, setNotifyDaily] = useState(true);
+  const [notifySystem, setNotifySystem] = useState(false);
+
+  const [lang, setLang] = useState<"ko" | "en">("ko");
 
   return (
     <div className="flex-1 flex flex-col p-10 bg-[#f4f5f7] w-full h-screen overflow-hidden">

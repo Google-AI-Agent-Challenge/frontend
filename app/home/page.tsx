@@ -26,7 +26,7 @@ export default function DashboardPage() {
 
         const chunks = await Promise.all(chunkRequests);
         setReviews(chunks.flat());
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("리뷰 데이터 로드 오류:", err);
       }
     }

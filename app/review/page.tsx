@@ -31,7 +31,7 @@ export default function ReviewPage() {
         if (reviewData.length > 0) {
           setReviews(reviewData);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("초기 데이터 로드 오류:", err);
       } finally {
         setIsLoading(false);
@@ -77,7 +77,7 @@ export default function ReviewPage() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("엑셀 다운로드 중 오류 발생:", err);
     } finally {
       setIsLoading(false);
