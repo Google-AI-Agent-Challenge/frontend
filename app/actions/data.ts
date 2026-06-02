@@ -19,12 +19,50 @@ export async function fetchProductsAction(): Promise<Product[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/api/products/list`);
     if (!res.ok) {
-      throw new Error(`fetchProductsAction Error: ${res.statusText}`);
+      console.error(`fetchProductsAction Error: ${res.status} ${res.statusText}`);
+      return [];
     }
     const data = await res.json();
     return data as Product[];
-  } catch (error: any) {
-    throw new Error("[fetchProductsAction] " + error.message);
+  } catch (error) {
+    console.error("[fetchProductsAction]", error);
+    return [];
+  }
+}
+
+// ──────────────────────────────────────────────────────────
+// 리뷰 전체 건수 조회 (병렬 청크 로딩용)
+// ──────────────────────────────────────────────────────────
+export async function fetchReviewsCountAction(): Promise<{ total: number }> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/reviews/count`);
+    if (!res.ok) {
+      console.error(`fetchReviewsCountAction Error: ${res.status} ${res.statusText}`);
+      return { total: 0 };
+    }
+    const data = await res.json();
+    return data as { total: number };
+  } catch (error) {
+    console.error("[fetchReviewsCountAction]", error);
+    return { total: 0 };
+  }
+}
+
+// ──────────────────────────────────────────────────────────
+// 페이지별 리뷰 조회 (병렬 청크 로딩용)
+// ──────────────────────────────────────────────────────────
+export async function fetchReviewsPageAction(page = 1, limit = 500): Promise<Review[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/reviews?page=${page}&limit=${limit}`);
+    if (!res.ok) {
+      console.error(`fetchReviewsPageAction Error: ${res.status} ${res.statusText}`);
+      return [];
+    }
+    const data = await res.json();
+    return data as Review[];
+  } catch (error) {
+    console.error("[fetchReviewsPageAction]", error);
+    return [];
   }
 }
 
@@ -35,12 +73,14 @@ export async function fetchLatestReviewsAction(limit = 20): Promise<Review[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/api/reviews?limit=${limit}`);
     if (!res.ok) {
-      throw new Error(`fetchLatestReviewsAction Error: ${res.statusText}`);
+      console.error(`fetchLatestReviewsAction Error: ${res.status} ${res.statusText}`);
+      return [];
     }
     const data = await res.json();
     return data as Review[];
-  } catch (error: any) {
-    throw new Error("[fetchLatestReviewsAction] " + error.message);
+  } catch (error) {
+    console.error("[fetchLatestReviewsAction]", error);
+    return [];
   }
 }
 
@@ -62,12 +102,14 @@ export async function fetchReviewsByKeywordsAction(
 
     const res = await fetch(`${API_BASE_URL}/api/reviews?${params.toString()}`);
     if (!res.ok) {
-      throw new Error(`fetchReviewsByKeywordsAction Error: ${res.statusText}`);
+      console.error(`fetchReviewsByKeywordsAction Error: ${res.status} ${res.statusText}`);
+      return [];
     }
     const data = await res.json();
     return data as Review[];
-  } catch (error: any) {
-    throw new Error("[fetchReviewsByKeywordsAction] " + error.message);
+  } catch (error) {
+    console.error("[fetchReviewsByKeywordsAction]", error);
+    return [];
   }
 }
 
@@ -91,10 +133,9 @@ export async function fetchReviewsByIdsAction(
     }
     const data = await res.json();
     return data as Review[];
-  } catch (error: any) {
-    // If backend doesn't support batch, fallback or error out. 
-    // Usually API endpoints can handle this via query params or a POST.
-    throw new Error("[fetchReviewsByIdsAction] " + error.message);
+  } catch (error) {
+    console.error("[fetchReviewsByIdsAction]", error);
+    return [];
   }
 }
 
@@ -116,7 +157,8 @@ export async function fetchReviewsByProductAction(
     }
     const data = await res.json();
     return data as Review[];
-  } catch (error: any) {
-    throw new Error("[fetchReviewsByProductAction] " + error.message);
+  } catch (error) {
+    console.error("[fetchReviewsByProductAction]", error);
+    return [];
   }
 }

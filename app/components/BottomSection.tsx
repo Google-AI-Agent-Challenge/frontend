@@ -86,7 +86,7 @@ export default function BottomSection() {
               오늘의 핵심 이슈
             </h5>
             <p className="text-[20px] text-gray-500 leading-[1.6] font-medium mt-1">
-              '당근 패드' 라인의 초기 트러블 반응 모니터링이 시급합니다. CS 대응
+              &apos;당근 패드&apos; 라인의 초기 트러블 반응 모니터링이 시급합니다. CS 대응
               매뉴얼 점검을 권장합니다.
             </p>
           </div>

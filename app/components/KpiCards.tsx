@@ -25,7 +25,7 @@ export default function KpiCards({ reviews }: KpiCardsProps) {
   const priorityReviews = reviews.filter(
     (r) =>
       r.issue_type?.includes("불량") ||
-      r.review_text.includes("파손") ||
+      r.review_text?.includes("파손") ||
       r.rating <= 2,
   ).length;
 

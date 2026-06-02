@@ -49,7 +49,7 @@ fi
 # 4. Cloud Build를 사용한 빌드 및 배포 기동 (치환 변수로 NEXT_PUBLIC_ 변수 강제 주입)
 echo "🏗️ 2. Google Cloud Build를 활용하여 원격 프론트엔드 빌드 시작..."
 gcloud builds submit --config=cloudbuild.yaml \
-    --substitutions=COMMIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "latest"),_API_URL="$API_URL",_NEXT_PUBLIC_SUPABASE_URL="$NEXT_PUBLIC_SUPABASE_URL",_NEXT_PUBLIC_SUPABASE_ANON_KEY="$NEXT_PUBLIC_SUPABASE_ANON_KEY" \
+    --substitutions=COMMIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "latest"),_API_URL="$API_URL" \
     --project=$PROJECT_ID
 
 if [ $? -eq 0 ]; then
