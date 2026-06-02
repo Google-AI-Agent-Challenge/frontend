@@ -34,7 +34,7 @@ export default function ReviewAnalysisBoard({
       const matchSentiment = sentimentFilter === "all" || r.sentiment === sentimentFilter;
       const matchSearch =
         !searchQuery ||
-        r.review_text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        r.review_text?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         r.keywords?.some((k) => k.toLowerCase().includes(searchQuery.toLowerCase()));
       return matchProduct && matchSentiment && matchSearch;
     });
@@ -110,7 +110,7 @@ export default function ReviewAnalysisBoard({
     rating: r.rating || 5,
     skinType: r.reviewer_type || "복합성 피부",
     productName: r.products?.product_name || "알 수 없는 제품",
-    text: r.review_text,
+    text: r.review_text || "",
     hashtags: r.keywords || [],
     date: r.review_date || new Date().toLocaleDateString(),
   })) : dummyReviews;
