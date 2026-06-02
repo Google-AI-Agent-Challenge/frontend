@@ -26,5 +26,5 @@ jobs:
         run: |
           gcloud builds submit \
             --config cloudbuild.yaml \
-            --substitutions=COMMIT_SHA=${{ github.sha }},_NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }} \
+            --substitutions=COMMIT_SHA=${{ github.sha }},_API_URL=${{ secrets.API_URL }} \
             .
