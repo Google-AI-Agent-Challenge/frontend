@@ -15,7 +15,7 @@ export default function DashboardPage() {
   useEffect(() => {
     async function init() {
       try {
-        const reviewData = await fetchLatestReviewsAction(10000);
+        const reviewData = await fetchLatestReviewsAction(200);
         if (reviewData.length > 0) {
           setReviews(reviewData);
         }
