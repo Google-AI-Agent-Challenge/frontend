@@ -9,17 +9,20 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import type { TooltipProps } from "recharts";
-
 interface TrendEntry {
   name: string;
   percent: number;
   count: number;
 }
 
-function CustomTooltip({ active, payload }: TooltipProps<number, string>) {
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: { payload: TrendEntry }[];
+}
+
+function CustomTooltip({ active, payload }: CustomTooltipProps) {
   if (active && payload && payload.length) {
-    const data = payload[0].payload as TrendEntry;
+    const data = payload[0].payload;
     return (
       <div className="bg-white px-3 py-2 rounded-lg shadow-md border border-gray-100 flex flex-col items-center">
         <p className="text-[#B22121] font-bold text-[13px] tracking-tight">

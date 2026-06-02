@@ -24,8 +24,8 @@ export async function fetchProductsAction(): Promise<Product[]> {
     }
     const data = await res.json();
     return data as Product[];
-  } catch (error: unknown) {
-    console.error("[fetchProductsAction]", error.message);
+  } catch (error) {
+    console.error("[fetchProductsAction]", error);
     return [];
   }
 }
@@ -42,8 +42,8 @@ export async function fetchReviewsCountAction(): Promise<{ total: number }> {
     }
     const data = await res.json();
     return data as { total: number };
-  } catch (error: unknown) {
-    console.error("[fetchReviewsCountAction]", error.message);
+  } catch (error) {
+    console.error("[fetchReviewsCountAction]", error);
     return { total: 0 };
   }
 }
@@ -60,8 +60,8 @@ export async function fetchReviewsPageAction(page = 1, limit = 500): Promise<Rev
     }
     const data = await res.json();
     return data as Review[];
-  } catch (error: unknown) {
-    console.error("[fetchReviewsPageAction]", error.message);
+  } catch (error) {
+    console.error("[fetchReviewsPageAction]", error);
     return [];
   }
 }
@@ -78,8 +78,8 @@ export async function fetchLatestReviewsAction(limit = 20): Promise<Review[]> {
     }
     const data = await res.json();
     return data as Review[];
-  } catch (error: unknown) {
-    console.error("[fetchLatestReviewsAction]", error.message);
+  } catch (error) {
+    console.error("[fetchLatestReviewsAction]", error);
     return [];
   }
 }
@@ -107,8 +107,8 @@ export async function fetchReviewsByKeywordsAction(
     }
     const data = await res.json();
     return data as Review[];
-  } catch (error: unknown) {
-    console.error("[fetchReviewsByKeywordsAction]", error.message);
+  } catch (error) {
+    console.error("[fetchReviewsByKeywordsAction]", error);
     return [];
   }
 }
@@ -133,8 +133,8 @@ export async function fetchReviewsByIdsAction(
     }
     const data = await res.json();
     return data as Review[];
-  } catch (error: unknown) {
-    console.error("[fetchReviewsByIdsAction]", error.message);
+  } catch (error) {
+    console.error("[fetchReviewsByIdsAction]", error);
     return [];
   }
 }
@@ -157,8 +157,8 @@ export async function fetchReviewsByProductAction(
     }
     const data = await res.json();
     return data as Review[];
-  } catch (error: unknown) {
-    console.error("[fetchReviewsByProductAction]", error.message);
+  } catch (error) {
+    console.error("[fetchReviewsByProductAction]", error);
     return [];
   }
 }

@@ -85,7 +85,8 @@ export async function sendMessage(userInput: string): Promise<AiResponse> {
     }
     params.append("limit", "300");
 
-    let rawReviews: Record<string, unknown>[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let rawReviews: any[] = [];
     try {
       const res = await fetch(`${API_BASE_URL}/api/reviews?${params.toString()}`);
       if (res.ok) {
