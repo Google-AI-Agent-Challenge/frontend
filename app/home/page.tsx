@@ -5,25 +5,32 @@ import KpiCards from "../components/KpiCards";
 import MiddleCharts from "../components/MiddleCharts";
 import BottomSection from "../components/BottomSection";
 
-import { fetchLatestReviewsAction } from "../actions/data";
+import { fetchReviewsCountAction, fetchReviewsPageAction } from "../actions/data";
 import type { Review } from "../types";
+
+const CHUNK_SIZE = 500;
 
 export default function DashboardPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
 
-  // 초기 리뷰 데이터 로드 (최대 10000건)
   useEffect(() => {
-    async function init() {
+    async function loadAllReviews() {
       try {
-        const reviewData = await fetchLatestReviewsAction(200);
-        if (reviewData.length > 0) {
-          setReviews(reviewData);
-        }
+        const { total } = await fetchReviewsCountAction();
+        if (total === 0) return;
+
+        const totalChunks = Math.ceil(total / CHUNK_SIZE);
+        const chunkRequests = Array.from({ length: totalChunks }, (_, i) =>
+          fetchReviewsPageAction(i + 1, CHUNK_SIZE)
+        );
+
+        const chunks = await Promise.all(chunkRequests);
+        setReviews(chunks.flat());
       } catch (err: any) {
-        console.error("초기 데이터 로드 오류:", err);
+        console.error("리뷰 데이터 로드 오류:", err);
       }
     }
-    init();
+    loadAllReviews();
   }, []);
 
   return (
