@@ -50,7 +50,7 @@ function parseBriefingSections(text: string): { positive: string; issue: string 
 
   return {
     positive: positiveMatch?.[1]?.trim() ?? text.slice(0, 80),
-    issue: issueMatch?.[1]?.trim() ?? text.slice(80, 160) || text.slice(0, 80),
+    issue: issueMatch?.[1]?.trim() ?? (text.slice(80, 160) || text.slice(0, 80)),
   };
 }
 
