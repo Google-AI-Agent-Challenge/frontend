@@ -1,7 +1,6 @@
 "use server";
 
 import { GoogleGenerativeAI, SchemaType, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
-import { supabase } from "../lib/supabase";
 import type { AiResponse } from "../types";
 
 const MODEL_NAME = "gemini-2.5-flash";
@@ -63,82 +62,81 @@ export async function sendMessage(userInput: string): Promise<AiResponse> {
     const filters = await generateFilterParams(userInput, genAI);
     console.log("[chat action] Extracted Filters:", filters);
 
-    // Stage 2: 동적 쿼리 실행
-    let query = supabase
-      .from("reviews")
-      .select(`
-        id,
-        review_text,
-        rating,
-        review_date,
-        sentiment,
-        issue_type,
-        products!inner (
-          product_name
-        ),
-        review_keywords (
-          keywords (
-            keyword
-          )
-        )
-      `)
-      .order("review_date", { ascending: false });
+    // Stage 2: 동적 쿼리 실행 (GCP 커스텀 API fetch 호출)
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+    const params = new URLSearchParams();
 
     if (filters.productName) {
       const cleanName = filters.productName.replace(/패드|pad/gi, "").trim();
       if (cleanName) {
-        query = query.ilike("products.product_name", `%${cleanName}%`);
+        params.append("product_name", cleanName);
       }
     }
     if (filters.sentiment === "positive" || filters.sentiment === "negative" || filters.sentiment === "neutral") {
-      query = query.eq("sentiment", filters.sentiment);
+      params.append("sentiment", filters.sentiment);
     }
     if (filters.dateRangeDays > 0) {
       const d = new Date();
       d.setDate(d.getDate() - filters.dateRangeDays);
-      query = query.gte("review_date", d.toISOString().split("T")[0]);
+      params.append("start_date", d.toISOString().split("T")[0]);
     }
     if (filters.keywords && filters.keywords.length > 0) {
-      const orConditions = filters.keywords.map(kw => `review_text.ilike.%${kw}%`).join(',');
-      query = query.or(orConditions);
+      params.append("keywords", filters.keywords.join(","));
     }
+    params.append("limit", "300");
 
-    // 결과를 300개까지만 제한하여 토큰 수 대폭 감소
-    query = query.limit(300);
-
-    let { data: rawReviews, error: dbError } = await query;
-
-    if (dbError) {
-      console.error("[chat action] Supabase 조회 실패:", dbError.message);
+    let rawReviews: any[] = [];
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/reviews?${params.toString()}`);
+      if (res.ok) {
+        rawReviews = await res.json();
+      } else {
+        console.error("[chat action] API 조회 실패:", res.statusText);
+      }
+    } catch (fetchError: any) {
+      console.error("[chat action] API fetch 오류:", fetchError.message);
     }
 
     // Fallback: 결과가 0개일 경우, 키워드가 너무 빡빡할 수 있으므로 키워드 필터를 풀고 다시 조회
     if ((!rawReviews || rawReviews.length === 0) && filters.keywords && filters.keywords.length > 0) {
       console.log("[chat action] 필터 매칭 결과 0개. 키워드를 제외하고 다시 검색합니다.");
-      let fallbackQuery = supabase.from("reviews").select(`id, review_text, rating, review_date, sentiment, issue_type, products!inner(product_name), review_keywords(keywords(keyword))`).order("review_date", { ascending: false }).limit(200);
+      const fallbackParams = new URLSearchParams();
       if (filters.productName) {
         const cleanName = filters.productName.replace(/패드|pad/gi, "").trim();
-        if (cleanName) fallbackQuery = fallbackQuery.ilike("products.product_name", `%${cleanName}%`);
+        if (cleanName) {
+          fallbackParams.append("product_name", cleanName);
+        }
       }
       if (filters.sentiment === "positive" || filters.sentiment === "negative" || filters.sentiment === "neutral") {
-        fallbackQuery = fallbackQuery.eq("sentiment", filters.sentiment);
+        fallbackParams.append("sentiment", filters.sentiment);
       }
       if (filters.dateRangeDays > 0) {
         const d = new Date();
         d.setDate(d.getDate() - filters.dateRangeDays);
-        fallbackQuery = fallbackQuery.gte("review_date", d.toISOString().split("T")[0]);
+        fallbackParams.append("start_date", d.toISOString().split("T")[0]);
       }
-      const { data } = await fallbackQuery;
-      rawReviews = data;
+      fallbackParams.append("limit", "200");
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/reviews?${fallbackParams.toString()}`);
+        if (res.ok) {
+          rawReviews = await res.json();
+        }
+      } catch (fallbackError: any) {
+        console.error("[chat action] API fallback fetch 오류:", fallbackError.message);
+      }
     }
 
-    const reviews = (rawReviews as any[]) ?? [];
+    const reviews = rawReviews ?? [];
     
     // 프롬프트에 주입할 컨텍스트 생성 (토큰 수 최적화)
     const formattedReviews = reviews.map((r, index) => {
-      const kws = r.review_keywords
-        ? (r.review_keywords as any[]).map((rk: any) => rk.keywords?.keyword).filter(Boolean)
-        : [];
+      let kws: string[] = [];
+      if (Array.isArray(r.keywords)) {
+        kws = r.keywords;
+      } else if (r.review_keywords) {
+        kws = (r.review_keywords as any[]).map((rk: any) => rk.keywords?.keyword).filter(Boolean);
+      }
       return {
         _id: String(index),
         date: r.review_date,

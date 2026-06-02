@@ -19,7 +19,7 @@ export interface Message {
 }
 
 // ----------------------------------------------------------------
-// Supabase 'products' 테이블 타입
+// 'products' 테이블/API 타입
 // ----------------------------------------------------------------
 export interface Product {
   /** UUID PK */
@@ -47,7 +47,7 @@ export interface Product {
 }
 
 // ----------------------------------------------------------------
-// Supabase 'reviews' 테이블 타입 (products JOIN 포함)
+// 'reviews' 테이블/API 타입 (products 정보 포함)
 // ----------------------------------------------------------------
 export interface Review {
   id: string;
@@ -66,9 +66,8 @@ export interface Review {
   review_id: string | null;
 
   /**
-   * Supabase FK JOIN으로 자동 포함되는 제품 정보
+   * DB FK 관계 혹은 API를 통해 포함되는 제품 정보
    * reviews.product_id → products.id
-   * select("*, products(...)") 로 가져올 때 채워집니다.
    */
   products?: Product | null;
 }
