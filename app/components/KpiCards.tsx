@@ -90,10 +90,11 @@ export default function KpiCards({
             >
               <option value={7}>최근 7일</option>
               <option value={30}>최근 30일</option>
+              <option value={9999}>전체기간</option>
             </select>
             <div className="bg-white border border-gray-200 text-gray-700 font-bold px-4 py-2 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:bg-gray-50 transition-colors duration-200 text-[14px] flex items-center gap-2 relative z-0">
               <Calendar size={15} className="text-gray-400" />
-              <span>{period === 7 ? "7일" : "30일"}</span>
+              <span>{period === 9999 ? "전체기간" : period === 7 ? "7일" : "30일"}</span>
               <span className="text-[9px] text-gray-400">▼</span>
             </div>
           </div>

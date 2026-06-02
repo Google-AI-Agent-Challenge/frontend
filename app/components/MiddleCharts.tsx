@@ -51,10 +51,29 @@ function formatDateLabel(dateStr: string): string {
 export default function MiddleCharts({ keywords, negativeTrend }: MiddleChartsProps) {
   const maxCount = keywords.length > 0 ? Math.max(...keywords.map((k) => k.count)) : 1;
 
-  const chartData: ChartEntry[] = negativeTrend.map((entry) => ({
-    name: formatDateLabel(entry.date),
-    count: entry.count,
-  }));
+  const chartData: ChartEntry[] = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  for (let i = 3; i >= 0; i--) {
+    const weekEnd = new Date(today);
+    weekEnd.setDate(today.getDate() - (i * 7));
+    
+    const weekStart = new Date(weekEnd);
+    weekStart.setDate(weekEnd.getDate() - 6);
+
+    let count = 0;
+    negativeTrend.forEach(entry => {
+      const entryDate = new Date(entry.date);
+      entryDate.setHours(0, 0, 0, 0);
+      if (entryDate >= weekStart && entryDate <= weekEnd) {
+        count += entry.count;
+      }
+    });
+    
+    const name = `${weekEnd.getMonth() + 1}/${weekEnd.getDate()}`;
+    chartData.push({ name, count });
+  }
 
   return (
     <div className="grid grid-cols-2 gap-6 mb-8">
@@ -101,7 +120,7 @@ export default function MiddleCharts({ keywords, negativeTrend }: MiddleChartsPr
           부정 리뷰 추이
         </h3>
         <div className="bg-white rounded-2xl p-7 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 flex-1 flex flex-col justify-center">
-          {chartData.length === 0 ? (
+          {negativeTrend.length === 0 ? (
             <p className="text-gray-400 text-center text-[18px]">데이터 로딩 중...</p>
           ) : (
             <div className="w-full relative h-[180px]">
