@@ -61,7 +61,7 @@ export default function KpiCards({ reviews }: KpiCardsProps) {
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-extrabold text-gray-900 tracking-tight">
-              {totalReviews > 0 ? totalReviews.toLocaleString() : "0"}건
+              {totalReviews.toLocaleString()}건
             </span>
             <span className="text-sm font-semibold text-gray-500">(+86)</span>
           </div>
@@ -74,7 +74,7 @@ export default function KpiCards({ reviews }: KpiCardsProps) {
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-extrabold text-gray-900 tracking-tight">
-              {totalReviews > 0 ? avgRating : "4.12"}
+              {avgRating}
             </span>
             <span className="text-[15px] font-semibold text-gray-400">
               / 5.00
@@ -89,7 +89,7 @@ export default function KpiCards({ reviews }: KpiCardsProps) {
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-extrabold text-[#B22121] tracking-tight">
-              {totalReviews > 0 ? negativeReviews.toLocaleString() : "184"}건
+              {negativeReviews.toLocaleString()}건
             </span>
             <span className="text-sm font-bold text-[#B22121]">(+20)</span>
           </div>
@@ -102,7 +102,7 @@ export default function KpiCards({ reviews }: KpiCardsProps) {
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-extrabold text-[#E88700] tracking-tight">
-              {totalReviews > 0 ? priorityReviews.toLocaleString() : "3"}건
+              {priorityReviews.toLocaleString()}건
             </span>
             <span className="text-sm font-bold text-[#E88700]">(+1)</span>
           </div>
