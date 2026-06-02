@@ -5,7 +5,14 @@
  * API 서버를 통한 데이터 조회 Server Actions
  */
 
-import type { Product, Review } from "../types";
+import type {
+  Product,
+  Review,
+  DashboardSummary,
+  TrendingKeyword,
+  NegativeTrendEntry,
+  DashboardInsights,
+} from "../types";
 
 // "use server" Server Action은 Node.js 서버에서만 실행되므로
 // 빌드 타임에 번들에 인라인되는 NEXT_PUBLIC_* 대신
@@ -160,5 +167,126 @@ export async function fetchReviewsByProductAction(
   } catch (error) {
     console.error("[fetchReviewsByProductAction]", error);
     return [];
+  }
+}
+
+// ──────────────────────────────────────────────────────────
+// 대시보드 요약 (KPI 카드용)
+// ──────────────────────────────────────────────────────────
+export async function fetchDashboardSummaryAction(
+  productId?: string,
+  period = 7
+): Promise<DashboardSummary | null> {
+  try {
+    const params = new URLSearchParams({ period: period.toString() });
+    if (productId) params.append("product_id", productId);
+    const res = await fetch(
+      `${API_BASE_URL}/api/dashboard/summary?${params.toString()}`
+    );
+    if (!res.ok) {
+      console.error(`fetchDashboardSummaryAction Error: ${res.status}`);
+      return null;
+    }
+    return (await res.json()) as DashboardSummary;
+  } catch (error) {
+    console.error("[fetchDashboardSummaryAction]", error);
+    return null;
+  }
+}
+
+// ──────────────────────────────────────────────────────────
+// Top 5 급상승 키워드
+// ──────────────────────────────────────────────────────────
+export async function fetchTrendingKeywordsAction(
+  productId?: string,
+  period = 7
+): Promise<TrendingKeyword[]> {
+  try {
+    const params = new URLSearchParams({ period: period.toString() });
+    if (productId) params.append("product_id", productId);
+    const res = await fetch(
+      `${API_BASE_URL}/api/dashboard/trending-keywords?${params.toString()}`
+    );
+    if (!res.ok) {
+      console.error(`fetchTrendingKeywordsAction Error: ${res.status}`);
+      return [];
+    }
+    return (await res.json()) as TrendingKeyword[];
+  } catch (error) {
+    console.error("[fetchTrendingKeywordsAction]", error);
+    return [];
+  }
+}
+
+// ──────────────────────────────────────────────────────────
+// 부정 리뷰 추이 시계열
+// ──────────────────────────────────────────────────────────
+export async function fetchNegativeTrendAction(
+  productId?: string,
+  period = 7
+): Promise<NegativeTrendEntry[]> {
+  try {
+    const params = new URLSearchParams({ period: period.toString() });
+    if (productId) params.append("product_id", productId);
+    const res = await fetch(
+      `${API_BASE_URL}/api/dashboard/negative-trend?${params.toString()}`
+    );
+    if (!res.ok) {
+      console.error(`fetchNegativeTrendAction Error: ${res.status}`);
+      return [];
+    }
+    return (await res.json()) as NegativeTrendEntry[];
+  } catch (error) {
+    console.error("[fetchNegativeTrendAction]", error);
+    return [];
+  }
+}
+
+// ──────────────────────────────────────────────────────────
+// 속성 점수 인사이트 (성분/제형/용기)
+// ──────────────────────────────────────────────────────────
+export async function fetchDashboardInsightsAction(
+  productId?: string,
+  period = 7
+): Promise<DashboardInsights | null> {
+  try {
+    const params = new URLSearchParams({ period: period.toString() });
+    if (productId) params.append("product_id", productId);
+    const res = await fetch(
+      `${API_BASE_URL}/api/dashboard/insights?${params.toString()}`
+    );
+    if (!res.ok) {
+      console.error(`fetchDashboardInsightsAction Error: ${res.status}`);
+      return null;
+    }
+    return (await res.json()) as DashboardInsights;
+  } catch (error) {
+    console.error("[fetchDashboardInsightsAction]", error);
+    return null;
+  }
+}
+
+// ──────────────────────────────────────────────────────────
+// AI 브리핑 텍스트
+// ──────────────────────────────────────────────────────────
+export async function fetchAiBriefingAction(
+  productId?: string,
+  period = 7
+): Promise<string> {
+  try {
+    const params = new URLSearchParams({ period: period.toString() });
+    if (productId) params.append("product_id", productId);
+    const res = await fetch(
+      `${API_BASE_URL}/api/dashboard/ai-briefing?${params.toString()}`
+    );
+    if (!res.ok) {
+      console.error(`fetchAiBriefingAction Error: ${res.status}`);
+      return "";
+    }
+    const data = await res.json();
+    return (data as { ai_briefing: string }).ai_briefing ?? "";
+  } catch (error) {
+    console.error("[fetchAiBriefingAction]", error);
+    return "";
   }
 }

@@ -91,3 +91,45 @@ export interface AiResponse {
   tags?: string[];
   matchedReviewIds?: string[];
 }
+
+// ----------------------------------------------------------------
+// 대시보드 API 응답 타입
+// ----------------------------------------------------------------
+export interface UrgentReviewSummary {
+  id: string;
+  summary: string;
+  rating: number;
+}
+
+export interface DashboardSummary {
+  total_reviews: number;
+  total_reviews_diff: number;
+  average_rating: number;
+  average_rating_diff: number;
+  negative_reviews_count: number;
+  negative_reviews_rate: number;
+  negative_reviews_rate_diff: number;
+  priority_reviews_count: number;
+  urgent_reviews_summary: UrgentReviewSummary[];
+}
+
+export interface TrendingKeyword {
+  keyword: string;
+  count: number;
+}
+
+export interface NegativeTrendEntry {
+  date: string;
+  count: number;
+}
+
+export interface AttributeScore {
+  score: number;
+  change: number;
+}
+
+export interface DashboardInsights {
+  ingredients: AttributeScore;
+  formulation: AttributeScore;
+  container: AttributeScore;
+}
