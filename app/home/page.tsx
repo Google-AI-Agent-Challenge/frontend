@@ -85,9 +85,8 @@ export default function DashboardPage() {
       const apiProductId = productId === "all" ? undefined : productId;
       
       if (type === "negative") {
-        const allData = await fetchReviewsWithFilterAction(apiProductId, undefined, period, 500);
-        const negativeData = allData.filter(r => r.sentiment === "negative" || r.rating <= 2);
-        setModalReviews(negativeData);
+        const data = await fetchReviewsWithFilterAction(apiProductId, "negative", period, 500);
+        setModalReviews(data);
       } else {
         if (summary?.urgent_reviews_summary && summary.urgent_reviews_summary.length > 0) {
           const ids = summary.urgent_reviews_summary.map((item) => item.id);
