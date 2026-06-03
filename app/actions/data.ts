@@ -319,19 +319,21 @@ export async function fetchReviewsWithFilterAction(
   sentiment?: string,
   period?: number,
   limit = 50,
+  priority = false
 ): Promise<Review[]> {
   try {
     const params = new URLSearchParams();
     if (productId && productId !== "all") {
-      params.append("product_id", productId);
+      params.append("product", productId);
     }
     if (sentiment) {
       params.append("sentiment", sentiment);
     }
     if (period && period < 9999) {
-      const d = new Date();
-      d.setDate(d.getDate() - period);
-      params.append("start_date", d.toISOString().split("T")[0]);
+      params.append("period", period.toString());
+    }
+    if (priority) {
+      params.append("priority", "true");
     }
     params.append("limit", limit.toString());
 

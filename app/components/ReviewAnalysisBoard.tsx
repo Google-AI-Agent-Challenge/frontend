@@ -22,6 +22,7 @@ export default function ReviewAnalysisBoard({
   const [selectedProductId, setSelectedProductId] = useState<string | "all">("all");
   const [sentimentFilter, setSentimentFilter] = useState<"all" | "positive" | "neutral" | "negative">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [periodFilter, setPeriodFilter] = useState<"all" | "7" | "30">("all");
   const [visibleCount, setVisibleCount] = useState(5);
 
   const handleLoadMore = () => {
@@ -36,9 +37,19 @@ export default function ReviewAnalysisBoard({
         !searchQuery ||
         r.review_text?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         r.keywords?.some((k) => k.toLowerCase().includes(searchQuery.toLowerCase()));
-      return matchProduct && matchSentiment && matchSearch;
+      
+      let matchPeriod = true;
+      if (periodFilter !== "all" && r.review_date) {
+        const reviewDate = new Date(r.review_date);
+        const now = new Date();
+        const diffTime = Math.abs(now.getTime() - reviewDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        matchPeriod = diffDays <= parseInt(periodFilter);
+      }
+
+      return matchProduct && matchSentiment && matchSearch && matchPeriod;
     });
-  }, [reviews, selectedProductId, sentimentFilter, searchQuery]);
+  }, [reviews, selectedProductId, sentimentFilter, searchQuery, periodFilter]);
 
   const handleProductChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;
@@ -46,7 +57,7 @@ export default function ReviewAnalysisBoard({
     onProductSelect?.(val === "all" ? null : val);
   };
 
-  const totalCount = filteredReviews.length > 0 ? filteredReviews.length : 1842;
+  const totalCount = filteredReviews.length;
 
   const dummyReviews = [
     {
@@ -105,7 +116,7 @@ export default function ReviewAnalysisBoard({
     }
   ];
 
-  const displayReviews = filteredReviews.length > 0 ? filteredReviews.slice(0, 50).map((r, i) => ({
+  const displayReviews = filteredReviews.length > 0 ? filteredReviews.map((r, i) => ({
     id: r.id || `r-${i}`,
     rating: r.rating || 5,
     skinType: r.reviewer_type || "복합성 피부",
@@ -113,13 +124,20 @@ export default function ReviewAnalysisBoard({
     text: r.review_text || "",
     hashtags: r.keywords || [],
     date: r.review_date || new Date().toLocaleDateString(),
-  })) : dummyReviews;
+  })) : [];
 
-  const productLineup = [
-    { name: "당근 카밍 워터 패드", brand: "스킨푸드" },
-    { name: "티트리 수딩 인 카밍 패드", brand: "에센허브" },
-    { name: "어성초 77 클리어 패드", brand: "아누아" },
-    { name: "시카 레스큐 진정 패드", brand: "더마토리" },
+  const PRODUCT_STYLE_MAP = [
+    { keyword: "당근", imgSrc: "/images/carrot.png", bg: "#3a1820", activeColor: "#FF5E84" },
+    { keyword: "도토리", imgSrc: "/images/acorn.png", bg: "#2a2520", activeColor: "#b07840" },
+    { keyword: "감자", imgSrc: "/images/potato.png", bg: "#28281e", activeColor: "#c8b060" },
+    { keyword: "미나리", imgSrc: "/images/parsley.png", bg: "#1e2820", activeColor: "#60a870" },
+    { keyword: "라이스", imgSrc: "/images/rice.png", bg: "#262624", activeColor: "#d4cbb3" },
+    { keyword: "복숭아", imgSrc: "/images/peach.png", bg: "#2c1e22", activeColor: "#ff99bb" },
+    { keyword: "레몬그라스", imgSrc: "/images/niac.png", bg: "#1a2622", activeColor: "#7accb5" },
+    { keyword: "블루 캐모마일", imgSrc: "/images/blue.png", bg: "#18202c", activeColor: "#7fb2f0" },
+    { keyword: "샤인머스캣", imgSrc: "/images/cica.png", bg: "#1e261e", activeColor: "#90c95c" },
+    { keyword: "아스파라거스", imgSrc: "/images/clut.png", bg: "#20261c", activeColor: "#a6c478" },
+    { keyword: "핑크자몽", imgSrc: "/images/aha.png", bg: "#2c1c1c", activeColor: "#ff8270" },
   ];
 
   return (
@@ -158,10 +176,14 @@ export default function ReviewAnalysisBoard({
         </div>
         <div className="flex flex-col gap-2 flex-1">
           <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Period</label>
-          <select className="bg-gray-50 border border-gray-200 text-gray-800 text-sm font-semibold rounded-xl px-4 py-3 outline-none focus:border-pink-300 focus:ring-2 focus:ring-pink-100 transition-all appearance-none">
-            <option>최근 30일 (Last 30 Days)</option>
-            <option>최근 3개월</option>
-            <option>최근 6개월</option>
+          <select 
+            value={periodFilter}
+            onChange={(e) => setPeriodFilter(e.target.value as "all" | "7" | "30")}
+            className="bg-gray-50 border border-gray-200 text-gray-800 text-sm font-semibold rounded-xl px-4 py-3 outline-none focus:border-pink-300 focus:ring-2 focus:ring-pink-100 transition-all appearance-none"
+          >
+            <option value="all">전체 (All)</option>
+            <option value="7">최근 7일 (Last 7 Days)</option>
+            <option value="30">최근 30일 (Last 30 Days)</option>
           </select>
         </div>
         <div className="flex flex-col gap-2 flex-[1.5]">
@@ -305,18 +327,31 @@ export default function ReviewAnalysisBoard({
             <h3 className="text-lg font-bold text-gray-900 tracking-tight">제품 라인업</h3>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {productLineup.map((prod, idx) => (
-              <div key={idx} className="bg-gray-50 rounded-xl p-3 flex flex-col items-center justify-center gap-3 border border-gray-100 hover:bg-gray-100 transition-colors cursor-pointer">
-                <div className="w-16 h-16 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm">
-                  <span className="text-xs text-gray-400 font-bold">IMG</span>
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+            {PRODUCT_STYLE_MAP.map((prod, idx) => {
+              const matchedProduct = products.find(p => p.product_name?.includes(prod.keyword) || (prod.keyword === '당근' && p.product_name?.includes('캐롯')) || (prod.keyword === '미나리' && p.product_name?.includes('파슬리')));
+              const isSelected = matchedProduct && selectedProductId === matchedProduct.id;
+              
+              return (
+              <div 
+                key={idx} 
+                onClick={() => {
+                  if (matchedProduct) {
+                    const newId = isSelected ? "all" : matchedProduct.id;
+                    setSelectedProductId(newId);
+                    onProductSelect?.(newId === "all" ? null : newId);
+                  }
+                }}
+                className={`bg-transparent p-2 flex flex-col items-center justify-center gap-3 transition-transform hover:-translate-y-1 cursor-pointer group ${isSelected ? 'scale-110 drop-shadow-md' : 'opacity-70 hover:opacity-100'}`}
+              >
+                <div className="flex items-center justify-center transition-transform group-hover:scale-110">
+                  <img src={prod.imgSrc} alt={prod.keyword} className="w-12 h-12 object-contain drop-shadow-none" />
                 </div>
                 <div className="text-center">
-                  <div className="text-[10px] font-bold text-pink-500 mb-0.5">{prod.brand}</div>
-                  <div className="text-xs font-bold text-gray-700 line-clamp-1">{prod.name}</div>
+                  <div className={`text-[13px] font-bold ${isSelected ? 'text-pink-600' : 'text-gray-800'}`}>{prod.keyword}</div>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         </div>
       </div>
