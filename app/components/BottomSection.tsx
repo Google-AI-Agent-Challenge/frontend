@@ -1,11 +1,14 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import type { DashboardInsights } from "../types";
+import { exportToGoogleDocsAction } from "../actions/data";
 
 interface BottomSectionProps {
   insights: DashboardInsights | null;
   aiBriefing: string;
+  period: number;
+  productId: string;
 }
 
 interface InsightCard {
@@ -42,8 +45,33 @@ function buildInsightCards(insights: DashboardInsights): InsightCard[] {
   ];
 }
 
-export default function BottomSection({ insights, aiBriefing }: BottomSectionProps) {
+export default function BottomSection({
+  insights,
+  aiBriefing,
+  period,
+  productId,
+}: BottomSectionProps) {
   const cards = insights ? buildInsightCards(insights) : null;
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const title = `2026-06 화장품 VOC AI 분석 리포트 (최근 ${period}일)`;
+      const response = await exportToGoogleDocsAction(title, period, productId);
+
+      if (response.success && response.document_url) {
+        window.open(response.document_url, "_blank");
+      } else {
+        alert(response.detail || "오류가 발생했습니다.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("리포트 생성 중 알 수 없는 오류가 발생했습니다.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
     <div className="flex gap-6 pb-12">
@@ -60,7 +88,9 @@ export default function BottomSection({ insights, aiBriefing }: BottomSectionPro
           ) : (
             cards.map((card) => {
               const isPositive = card.change >= 0;
-              const accentColor = isPositive ? card.positiveColor : card.negativeColor;
+              const accentColor = isPositive
+                ? card.positiveColor
+                : card.negativeColor;
               const changeSign = isPositive ? "+" : "";
               return (
                 <div
@@ -78,7 +108,8 @@ export default function BottomSection({ insights, aiBriefing }: BottomSectionPro
                   <h4 className="text-[24px] font-bold text-gray-900 mt-2 tracking-tight">
                     {card.label} 만족도{" "}
                     <span style={{ color: accentColor }}>
-                      {changeSign}{card.change.toFixed(1)}%p
+                      {changeSign}
+                      {card.change.toFixed(1)}%p
                     </span>
                   </h4>
                   <p className="text-[20px] text-gray-700 leading-[1.6] font-medium tracking-tight">
@@ -89,7 +120,8 @@ export default function BottomSection({ insights, aiBriefing }: BottomSectionPro
                     {" — "}
                     전기 대비{" "}
                     <span className="font-bold" style={{ color: accentColor }}>
-                      {changeSign}{card.change.toFixed(1)}%p
+                      {changeSign}
+                      {card.change.toFixed(1)}%p
                     </span>{" "}
                     변동했습니다.
                   </p>
@@ -112,13 +144,18 @@ export default function BottomSection({ insights, aiBriefing }: BottomSectionPro
               ✨ AI 종합 브리핑
             </h5>
             <p className="text-[20px] text-gray-500 leading-[1.6] font-medium whitespace-pre-wrap">
-              {aiBriefing || "AI가 대시보드 데이터를 분석하여 요약하고 있습니다..."}
+              {aiBriefing ||
+                "AI가 대시보드 데이터를 분석하여 요약하고 있습니다..."}
             </p>
           </div>
 
           {/* 리포트 만들기 버튼 */}
-          <button className="w-full bg-white border border-gray-200 text-gray-900 font-bold py-4 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.04)] hover:bg-gray-50 hover:shadow-md transition-all duration-200 text-[24px] tracking-tight flex justify-center items-center gap-2 cursor-pointer">
-            리포트 만들기
+          <button
+            onClick={handleExport}
+            disabled={isExporting}
+            className="w-full bg-white border border-gray-200 text-gray-900 font-bold py-4 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.04)] hover:bg-gray-50 hover:shadow-md transition-all duration-200 text-[24px] tracking-tight flex justify-center items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isExporting ? "리포트 생성 중..." : "📄 리포트 만들기"}
           </button>
         </div>
       </div>

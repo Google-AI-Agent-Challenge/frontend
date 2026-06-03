@@ -82,15 +82,24 @@ export default function DashboardPage() {
     setModalReviews([]);
 
     try {
+      const apiProductId = productId === "all" ? undefined : productId;
+      
       if (type === "negative") {
-        const apiProductId = productId === "all" ? undefined : productId;
-        const data = await fetchReviewsWithFilterAction(apiProductId, "negative", 50);
-        setModalReviews(data);
+        const allData = await fetchReviewsWithFilterAction(apiProductId, undefined, period, 500);
+        const negativeData = allData.filter(r => r.sentiment === "negative" || r.rating <= 2);
+        setModalReviews(negativeData);
       } else {
         if (summary?.urgent_reviews_summary && summary.urgent_reviews_summary.length > 0) {
           const ids = summary.urgent_reviews_summary.map((item) => item.id);
           const data = await fetchReviewsByIdsAction(ids);
-          setModalReviews(data);
+          // If fetch by ids fails to return items, try to match locally from recent reviews
+          if (!data || data.length === 0) {
+             const allData = await fetchReviewsWithFilterAction(apiProductId, undefined, period, 500);
+             const matched = allData.filter(r => ids.includes(r.id) || (r.review_id && ids.includes(r.review_id)));
+             setModalReviews(matched);
+          } else {
+             setModalReviews(data);
+          }
         } else {
           setModalReviews([]);
         }
@@ -118,7 +127,7 @@ export default function DashboardPage() {
       <MiddleCharts keywords={keywords} negativeTrend={negativeTrend} period={period} />
 
       {/* Phase 4: 하단 분석 리스트 & AI 우측 패널 */}
-      <BottomSection insights={insights} aiBriefing={aiBriefing} />
+      <BottomSection insights={insights} aiBriefing={aiBriefing} period={period} productId={productId} />
 
       {/* Review Details Modal */}
       <ReviewModal

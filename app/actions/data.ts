@@ -312,47 +312,13 @@ export async function fetchAiBriefingAction(
 }
 
 // ──────────────────────────────────────────────────────────
-// Google Docs 리포트 내보내기
-// ──────────────────────────────────────────────────────────
-export async function exportToGoogleDocsAction(
-  productId: string = "all",
-  period: number = 30,
-): Promise<{ success: boolean; document_url?: string; detail?: string }> {
-  try {
-    const url = `${API_BASE_URL}/api/dashboard/export/docs`;
-
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        // "Authorization": `Bearer ${토큰}` // 필요시 주석 해제
-      },
-      body: JSON.stringify({
-        title: `2026-06 화장품 VOC AI 분석 리포트 (최근 ${period}일)`,
-        period: period,
-        product_id: productId,
-      }),
-    });
-
-    if (!res.ok) {
-      console.error(`exportToGoogleDocsAction Error: ${res.status}`);
-      return { success: false, detail: "서버 오류가 발생했습니다." };
-    }
-
-    return await res.json();
-  } catch (error) {
-    console.error("[exportToGoogleDocsAction]", error);
-    return { success: false, detail: "네트워크 오류가 발생했습니다." };
-  }
-}
-
-// ──────────────────────────────────────────────────────────
 // 필터 조건 기반 리뷰 목록 조회
 // ──────────────────────────────────────────────────────────
 export async function fetchReviewsWithFilterAction(
   productId?: string,
   sentiment?: string,
-  limit = 50
+  period?: number,
+  limit = 50,
 ): Promise<Review[]> {
   try {
     const params = new URLSearchParams();
@@ -361,6 +327,11 @@ export async function fetchReviewsWithFilterAction(
     }
     if (sentiment) {
       params.append("sentiment", sentiment);
+    }
+    if (period && period < 9999) {
+      const d = new Date();
+      d.setDate(d.getDate() - period);
+      params.append("start_date", d.toISOString().split("T")[0]);
     }
     params.append("limit", limit.toString());
 
@@ -374,5 +345,66 @@ export async function fetchReviewsWithFilterAction(
   } catch (error) {
     console.error("[fetchReviewsWithFilterAction]", error);
     return [];
+  }
+}
+
+// ──────────────────────────────────────────────────────────
+// Google Docs 리포트 생성 및 내보내기
+// ──────────────────────────────────────────────────────────
+export interface ExportDocsResponse {
+  success: boolean;
+  message?: string;
+  document_id?: string;
+  document_url?: string;
+  detail?: string;
+}
+
+export async function exportToGoogleDocsAction(
+  title: string,
+  period: number,
+  productId: string = "all",
+  reportMarkdown?: string,
+): Promise<ExportDocsResponse> {
+  try {
+    const url = `${API_BASE_URL}/api/dashboard/export/docs`;
+
+    // API 명세서에 맞춘 Request Body 구성
+    const bodyData: Record<string, any> = {
+      title,
+      period,
+      product_id: productId,
+    };
+
+    // 마크다운 데이터가 있을 경우에만 추가
+    if (reportMarkdown) {
+      bodyData.report_markdown = reportMarkdown;
+    }
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        // 🚨 명세서에 [인증: 🔑] 표시가 있으므로 실제 요청 시 토큰이 필요합니다.
+        // "Authorization": `Bearer ${토큰}`
+      },
+      body: JSON.stringify(bodyData),
+    });
+
+    const data = await res.json();
+
+    // 500 Internal Server Error 등 에러 발생 시 처리
+    if (!res.ok) {
+      console.error(`exportToGoogleDocsAction Error: ${res.status}`);
+      return {
+        success: false,
+        detail: data.detail || "Google Docs API 호출 중 오류가 발생했습니다.",
+      };
+    }
+
+    // 200 OK 성공 시 응답 반환
+    return data as ExportDocsResponse;
+  } catch (error) {
+    console.error("[exportToGoogleDocsAction]", error);
+    return { success: false, detail: "네트워크 오류가 발생했습니다." };
   }
 }
