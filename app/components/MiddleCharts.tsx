@@ -14,6 +14,7 @@ import type { TrendingKeyword, NegativeTrendEntry } from "../types";
 interface MiddleChartsProps {
   keywords: TrendingKeyword[];
   negativeTrend: NegativeTrendEntry[];
+  period: number;
 }
 
 interface ChartEntry {
@@ -23,7 +24,7 @@ interface ChartEntry {
 
 interface CustomTooltipProps {
   active?: boolean;
-  payload?: { payload: ChartEntry }[];
+  payload?: { payload: any }[];
 }
 
 function CustomTooltip({ active, payload }: CustomTooltipProps) {
@@ -48,30 +49,37 @@ function formatDateLabel(dateStr: string): string {
   return dateStr;
 }
 
-export default function MiddleCharts({ keywords, negativeTrend }: MiddleChartsProps) {
-  const maxCount = keywords.length > 0 ? Math.max(...keywords.map((k) => k.count)) : 1;
+export default function MiddleCharts({
+  keywords,
+  negativeTrend,
+  period,
+}: MiddleChartsProps) {
+  const maxCount =
+    keywords.length > 0 ? Math.max(...keywords.map((k) => k.count)) : 1;
 
-  const chartData: ChartEntry[] = [];
+  const chartData: any[] = [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  const intervalDays = period === 7 ? 7 : 30;
+
   for (let i = 3; i >= 0; i--) {
-    const weekEnd = new Date(today);
-    weekEnd.setDate(today.getDate() - (i * 7));
-    
-    const weekStart = new Date(weekEnd);
-    weekStart.setDate(weekEnd.getDate() - 6);
+    const periodEnd = new Date(today);
+    periodEnd.setDate(today.getDate() - i * intervalDays);
+
+    const periodStart = new Date(periodEnd);
+    periodStart.setDate(periodEnd.getDate() - (intervalDays - 1));
 
     let count = 0;
-    negativeTrend.forEach(entry => {
+    negativeTrend.forEach((entry) => {
       const entryDate = new Date(entry.date);
       entryDate.setHours(0, 0, 0, 0);
-      if (entryDate >= weekStart && entryDate <= weekEnd) {
+      if (entryDate >= periodStart && entryDate <= periodEnd) {
         count += entry.count;
       }
     });
-    
-    const name = `${weekEnd.getMonth() + 1}/${weekEnd.getDate()}`;
+
+    const name = `${periodEnd.getMonth() + 1}/${periodEnd.getDate()}`;
     chartData.push({ name, count });
   }
 
@@ -84,14 +92,16 @@ export default function MiddleCharts({ keywords, negativeTrend }: MiddleChartsPr
         </h3>
         <div className="bg-white rounded-2xl p-7 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 flex-1 flex flex-col justify-center">
           {keywords.length === 0 ? (
-            <p className="text-gray-400 text-center text-[18px]">데이터 로딩 중...</p>
+            <p className="text-gray-400 text-center text-[18px]">
+              데이터 로딩 중...
+            </p>
           ) : (
             <div className="flex flex-col gap-5">
               {keywords.map((item, idx) => {
                 const widthPct = Math.round((item.count / maxCount) * 100);
                 return (
-                  <div key={item.keyword} className="flex items-center gap-4">
-                    <div className="w-4 text-center font-bold text-gray-800 text-[20px]">
+                  <div key={item.keyword} className="flex items-center gap-10">
+                    <div className="w-2 text-center font-bold text-gray-800 text-[20px]">
                       {idx + 1}
                     </div>
                     <div className="w-16 whitespace-nowrap font-semibold text-gray-800 text-[20px]">
@@ -121,7 +131,9 @@ export default function MiddleCharts({ keywords, negativeTrend }: MiddleChartsPr
         </h3>
         <div className="bg-white rounded-2xl p-7 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 flex-1 flex flex-col justify-center">
           {negativeTrend.length === 0 ? (
-            <p className="text-gray-400 text-center text-[18px]">데이터 로딩 중...</p>
+            <p className="text-gray-400 text-center text-[18px]">
+              데이터 로딩 중...
+            </p>
           ) : (
             <div className="w-full relative h-[180px]">
               <ResponsiveContainer width="100%" height="100%">
@@ -141,11 +153,7 @@ export default function MiddleCharts({ keywords, negativeTrend }: MiddleChartsPr
                     tick={{ fill: "#9ca3af", fontSize: 16, fontWeight: 600 }}
                     dy={10}
                   />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={false}
-                  />
+                  <YAxis axisLine={false} tickLine={false} tick={false} />
                   <Tooltip
                     content={<CustomTooltip />}
                     cursor={{ stroke: "#f3f4f6", strokeWidth: 2 }}

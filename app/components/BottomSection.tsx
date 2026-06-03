@@ -42,21 +42,8 @@ function buildInsightCards(insights: DashboardInsights): InsightCard[] {
   ];
 }
 
-function parseBriefingSections(text: string): { positive: string; issue: string } {
-  if (!text) return { positive: "", issue: "" };
-
-  const positiveMatch = text.match(/긍정[^:：\n]*[:：]?\s*([^\n#]+)/i);
-  const issueMatch = text.match(/(?:이슈|핵심|긴급|위험|부정)[^:：\n]*[:：]?\s*([^\n#]+)/i);
-
-  return {
-    positive: positiveMatch?.[1]?.trim() ?? text.slice(0, 80),
-    issue: issueMatch?.[1]?.trim() ?? (text.slice(80, 160) || text.slice(0, 80)),
-  };
-}
-
 export default function BottomSection({ insights, aiBriefing }: BottomSectionProps) {
   const cards = insights ? buildInsightCards(insights) : null;
-  const briefing = parseBriefingSections(aiBriefing);
 
   return (
     <div className="flex gap-6 pb-12">
@@ -119,24 +106,13 @@ export default function BottomSection({ insights, aiBriefing }: BottomSectionPro
           AI 브리핑 요약
         </h3>
 
-        <div className="flex flex-col gap-4 h-full justify-between">
-          {/* 긍정 시그널 */}
-          <div className="bg-white rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col justify-center flex-1">
-            <h5 className="text-[24px] font-bold text-gray-900 tracking-tight">
-              긍정 시그널
+        <div className="flex flex-col gap-4">
+          <div className="bg-white rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col min-h-[200px]">
+            <h5 className="text-[24px] font-bold text-gray-900 tracking-tight mb-3">
+              ✨ AI 종합 브리핑
             </h5>
-            <p className="text-[20px] text-gray-500 leading-[1.6] font-medium mt-1">
-              {briefing.positive || "데이터 로딩 중..."}
-            </p>
-          </div>
-
-          {/* 오늘의 핵심 이슈 */}
-          <div className="bg-white rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col justify-center flex-1">
-            <h5 className="text-[24px] font-bold text-gray-900 tracking-tight">
-              오늘의 핵심 이슈
-            </h5>
-            <p className="text-[20px] text-gray-500 leading-[1.6] font-medium mt-1">
-              {briefing.issue || "데이터 로딩 중..."}
+            <p className="text-[20px] text-gray-500 leading-[1.6] font-medium whitespace-pre-wrap">
+              {aiBriefing || "AI가 대시보드 데이터를 분석하여 요약하고 있습니다..."}
             </p>
           </div>
 

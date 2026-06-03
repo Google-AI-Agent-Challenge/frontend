@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Calendar, Filter } from "lucide-react";
-import type { DashboardSummary } from "../types";
+import type { DashboardSummary, Product } from "../types";
+import { fetchProductsAction } from "../actions/data";
 
 interface KpiCardsProps {
   summary: DashboardSummary | null;
@@ -10,6 +11,7 @@ interface KpiCardsProps {
   setPeriod: (val: number) => void;
   productId: string;
   setProductId: (val: string) => void;
+  onCardClick?: (type: "negative" | "priority") => void;
 }
 
 function formatDiff(value: number, unit = "건"): string {
@@ -23,44 +25,29 @@ export default function KpiCards({
   setPeriod,
   productId,
   setProductId,
+  onCardClick,
 }: KpiCardsProps) {
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
 
   useEffect(() => {
-    async function fetchProducts() {
+    async function loadProducts() {
       try {
-        const res = await fetch("/api/products/list");
-        if (!res.ok) throw new Error("Failed to fetch products");
-        const data = await res.json();
-        
-        if (Array.isArray(data)) {
-          setProducts(data);
-        } else if (data && Array.isArray(data.products)) {
-          setProducts(data.products);
-        } else if (data && Array.isArray(data.items)) {
-          setProducts(data.items);
-        } else if (data && Array.isArray(data.data)) {
-          setProducts(data.data);
-        } else {
-          setProducts([]);
-        }
+        const data = await fetchProductsAction();
+        setProducts(data);
       } catch (err) {
         console.error("Failed to load products:", err);
       } finally {
         setLoadingProducts(false);
       }
     }
-    fetchProducts();
+    loadProducts();
   }, []);
 
   const getProductName = () => {
     if (productId === "all") return "전체 제품";
-    const found = products.find(p => {
-      const val = p.id || p.productId || p.name;
-      return val === productId;
-    });
-    if (found) return found.name || found.id || found.productId;
+    const found = products.find(p => p.id === productId);
+    if (found) return found.product_name;
     return productId;
   };
 
@@ -80,7 +67,7 @@ export default function KpiCards({
         <h2 className="text-[28px] font-bold text-gray-900 tracking-tight pl-1">
           리뷰 종합 요약
         </h2>
-        <div className="flex gap-3">
+        <div className="flex gap-4">
           {/* 기간 설정 필터 */}
           <div className="relative inline-block">
             <select
@@ -92,10 +79,10 @@ export default function KpiCards({
               <option value={30}>최근 30일</option>
               <option value={9999}>전체기간</option>
             </select>
-            <div className="bg-white border border-gray-200 text-gray-700 font-bold px-4 py-2 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:bg-gray-50 transition-colors duration-200 text-[14px] flex items-center gap-2 relative z-0">
-              <Calendar size={15} className="text-gray-400" />
+            <div className="bg-white border border-gray-200 text-gray-700 font-bold px-6 py-3 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:bg-gray-50 transition-colors duration-200 text-[16px] flex items-center gap-3 relative z-0">
+              <Calendar size={18} className="text-gray-400" />
               <span>{period === 9999 ? "전체기간" : period === 7 ? "7일" : "30일"}</span>
-              <span className="text-[9px] text-gray-400">▼</span>
+              <span className="text-[11px] text-gray-400">▼</span>
             </div>
           </div>
 
@@ -108,20 +95,16 @@ export default function KpiCards({
               disabled={loadingProducts}
             >
               <option value="all">전체 제품</option>
-              {products.map((p: any, idx: number) => {
-                const val = p.id || p.productId || p.name || (typeof p === 'string' ? p : String(idx));
-                const label = p.name || p.id || p.productId || (typeof p === 'string' ? p : `Product ${idx}`);
-                return (
-                  <option key={val} value={val}>
-                    {label}
-                  </option>
-                );
-              })}
+              {products.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.product_name}
+                </option>
+              ))}
             </select>
-            <div className={`bg-white border border-gray-200 text-gray-700 font-bold px-4 py-2 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.03)] transition-colors duration-200 text-[14px] flex items-center gap-2 relative z-0 ${loadingProducts ? 'opacity-50' : 'hover:bg-gray-50'}`}>
-              <Filter size={14} className="text-gray-400" />
+            <div className={`bg-white border border-gray-200 text-gray-700 font-bold px-6 py-3 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.03)] transition-colors duration-200 text-[16px] flex items-center gap-3 relative z-0 ${loadingProducts ? 'opacity-50' : 'hover:bg-gray-50'}`}>
+              <Filter size={18} className="text-gray-400" />
               <span>{loadingProducts ? "불러오는 중..." : getProductName()}</span>
-              <span className="text-[9px] text-gray-400">▼</span>
+              <span className="text-[11px] text-gray-400">▼</span>
             </div>
           </div>
         </div>
@@ -156,8 +139,16 @@ export default function KpiCards({
         </div>
 
         {/* 부정 리뷰 */}
-        <div className="bg-white rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col gap-3 transition-transform hover:-translate-y-1 duration-300">
-          <span className="text-[24px] font-semibold text-gray-800">부정 리뷰</span>
+        <div
+          onClick={() => onCardClick?.("negative")}
+          className="bg-white rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col gap-3 transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:border-red-200 hover:shadow-[0_8px_20px_rgba(239,68,68,0.08)] active:scale-[0.98] select-none"
+        >
+          <div className="flex justify-between items-start">
+            <span className="text-[24px] font-semibold text-gray-800">부정 리뷰</span>
+            <span className="text-[11px] text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-full border border-red-100">
+              자세히 보기 →
+            </span>
+          </div>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-extrabold text-[#B22121] tracking-tight">
               {negativeReviews.toLocaleString()}건
@@ -169,8 +160,16 @@ export default function KpiCards({
         </div>
 
         {/* 우선 확인 리뷰 */}
-        <div className="bg-white rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col gap-3 transition-transform hover:-translate-y-1 duration-300">
-          <span className="text-[24px] font-semibold text-gray-800">우선 확인 리뷰</span>
+        <div
+          onClick={() => onCardClick?.("priority")}
+          className="bg-white rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col gap-3 transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:border-amber-200 hover:shadow-[0_8px_20px_rgba(245,158,11,0.08)] active:scale-[0.98] select-none"
+        >
+          <div className="flex justify-between items-start">
+            <span className="text-[24px] font-semibold text-gray-800">우선 확인 리뷰</span>
+            <span className="text-[11px] text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+              자세히 보기 →
+            </span>
+          </div>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-extrabold text-[#E88700] tracking-tight">
               {priorityReviews.toLocaleString()}건
