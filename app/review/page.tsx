@@ -24,7 +24,7 @@ export default function ReviewPage() {
         setIsLoading(true);
         const [prodData, reviewData] = await Promise.all([
           fetchProductsAction(),
-          fetchLatestReviewsAction(200),
+          fetchLatestReviewsAction(5000),
         ]);
         
         if (prodData.length > 0) setProducts(prodData);

@@ -85,23 +85,11 @@ export default function DashboardPage() {
       const apiProductId = productId === "all" ? undefined : productId;
       
       if (type === "negative") {
-        const data = await fetchReviewsWithFilterAction(apiProductId, "negative", period, 500);
+        const data = await fetchReviewsWithFilterAction(apiProductId, "negative", period, 500, false);
         setModalReviews(data);
       } else {
-        if (summary?.urgent_reviews_summary && summary.urgent_reviews_summary.length > 0) {
-          const ids = summary.urgent_reviews_summary.map((item) => item.id);
-          const data = await fetchReviewsByIdsAction(ids);
-          // If fetch by ids fails to return items, try to match locally from recent reviews
-          if (!data || data.length === 0) {
-             const allData = await fetchReviewsWithFilterAction(apiProductId, undefined, period, 500);
-             const matched = allData.filter(r => ids.includes(r.id) || (r.review_id && ids.includes(r.review_id)));
-             setModalReviews(matched);
-          } else {
-             setModalReviews(data);
-          }
-        } else {
-          setModalReviews([]);
-        }
+        const data = await fetchReviewsWithFilterAction(apiProductId, undefined, period, 500, true);
+        setModalReviews(data);
       }
     } catch (err) {
       console.error("Failed to fetch reviews for modal:", err);
