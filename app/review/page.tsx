@@ -15,7 +15,7 @@ import {
 import type { Review, Product, Message } from "../types";
 
 export default function ReviewPage() {
-  const [reviews, setReviews]   = useState<Review[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -27,7 +27,7 @@ export default function ReviewPage() {
           fetchProductsAction(),
           fetchLatestReviewsAction(5000),
         ]);
-        
+
         if (prodData.length > 0) setProducts(prodData);
         if (reviewData.length > 0) {
           setReviews(reviewData);
@@ -51,7 +51,7 @@ export default function ReviewPage() {
       } else if (msg?.keywords && msg.keywords.length > 0) {
         exportReviews = await fetchReviewsByKeywordsAction(msg.keywords, 100);
       }
-      
+
       if (exportReviews.length === 0) {
         alert("출력할 리뷰가 없습니다.");
         return;
@@ -105,7 +105,7 @@ export default function ReviewPage() {
         // 텍스트 줄바꿈(Wrap Text) 적용 (7번째 열: 리뷰내용)
         const reviewCell = row.getCell(7);
         reviewCell.alignment = { wrapText: true, vertical: "top" };
-        
+
         // 나머지 셀들의 기본 정렬
         row.eachCell((cell, colNumber) => {
           if (colNumber !== 7) {
@@ -116,12 +116,17 @@ export default function ReviewPage() {
 
       // 파일 생성 및 다운로드 (xlsx)
       const buffer = await workbook.xlsx.writeBuffer();
-      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
       const url = URL.createObjectURL(blob);
-      
+
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `tones_reviews_${new Date().getTime()}.xlsx`);
+      link.setAttribute(
+        "download",
+        `tones_reviews_${new Date().getTime()}.xlsx`,
+      );
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -135,13 +140,12 @@ export default function ReviewPage() {
 
   return (
     <>
-
       <div className="flex-1 flex h-full overflow-hidden bg-white w-full">
-        <ReviewAnalysisBoard 
-          reviews={reviews} 
-          products={products} 
-          isLoading={isLoading} 
-          onExportExcel={() => handleExportExcel()} 
+        <ReviewAnalysisBoard
+          reviews={reviews}
+          products={products}
+          isLoading={isLoading}
+          onExportExcel={() => handleExportExcel()}
         />
         <ReviewAiPanel />
       </div>
