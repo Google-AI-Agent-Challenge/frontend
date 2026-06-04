@@ -87,6 +87,10 @@ frontend/
 └── next.config.ts
 ```
 
+### ⚙️ 시스템 아키텍처 다이어그램
+
+<img src="./asset/시스템%20아키텍처.png" width="500"/>
+
 ---
 
 ## 🔑 핵심 설계 특징
