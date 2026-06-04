@@ -7,7 +7,7 @@ interface ReviewAnalysisBoardProps {
   reviews: Review[];
   products: Product[];
   isLoading?: boolean;
-  onExportExcel?: () => void;
+  onExportExcel?: (filteredReviews: Review[]) => void;
   onProductSelect?: (productId: string | null) => void;
 }
 
@@ -159,7 +159,7 @@ export default function ReviewAnalysisBoard({
           리뷰 분석
         </h2>
         <button
-          onClick={onExportExcel}
+          onClick={() => onExportExcel?.(filteredReviews)}
           className="flex items-center bg-white border border-pink-200 text-pink-600 font-bold px-4 py-2.5 rounded-xl shadow-sm hover:bg-pink-50 transition-colors"
         >
           <span>데이터 내보내기</span>
@@ -232,98 +232,7 @@ export default function ReviewAnalysisBoard({
           </div>
         </div>
       </div>
-      {/* 4. Bottom Product Lineup Area */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col">
-        <div className="flex items-center mb-6">
-          <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-            제품 라인업
-          </h3>
-        </div>
-
-        <div className="grid grid-cols-6 gap-4">
-          {PRODUCT_STYLE_MAP.map((prod, idx) => {
-            const matchedProduct = products.find(
-              (p) =>
-                p.product_name?.includes(prod.keyword) ||
-                (prod.keyword === "당근" && p.product_name?.includes("캐롯")) ||
-                (prod.keyword === "미나리" &&
-                  p.product_name?.includes("파슬리")),
-            );
-            const isSelected =
-              matchedProduct && selectedProductId === matchedProduct.id;
-
-            return (
-              <button
-                key={idx}
-                onClick={() => {
-                  if (matchedProduct) {
-                    const newId = isSelected ? "all" : matchedProduct.id;
-                    setSelectedProductId(newId);
-                    onProductSelect?.(newId === "all" ? null : newId);
-                  }
-                }}
-                className={`relative flex flex-col items-center justify-center p-4 rounded-2xl border transition-all duration-200 cursor-pointer ${
-                  isSelected
-                    ? "bg-pink-50 border-pink-400 shadow-md scale-105"
-                    : "bg-white border-gray-100 hover:border-pink-200 hover:bg-pink-50/50 hover:-translate-y-1"
-                }`}
-              >
-                <div className="w-16 h-16 mb-3 relative flex items-center justify-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={prod.imgSrc}
-                    alt={prod.keyword}
-                    className="w-full h-full object-contain drop-shadow-sm"
-                  />
-                </div>
-                <span
-                  className={`text-[13px] font-bold ${
-                    isSelected ? "text-pink-600" : "text-gray-700"
-                  }`}
-                >
-                  {prod.keyword}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
       <div className="flex flex-col gap-6 mb-8">
-        {/* 2. Skincare Attribute Score Area */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col">
-          <div className="flex items-center mb-6">
-            <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-              스킨케어 속성 점수
-            </h3>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2">
-            {[
-              { label: "성분 / 트러블", score: 85 },
-              { label: "수분 / 보습", score: 90 },
-              { label: "용기 / 디자인", score: 45 },
-            ].map((attr, idx) => (
-              <div key={idx} className="flex flex-col gap-2">
-                <div className="flex justify-between items-end">
-                  <span className="text-sm font-bold text-gray-700">
-                    {attr.label}
-                  </span>
-                  <span className="text-sm font-bold text-pink-500">
-                    {attr.score}
-                    <span className="text-gray-400 text-xs">/100</span>
-                  </span>
-                </div>
-                <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
-                  <div
-                    className="bg-gradient-to-r from-pink-500 to-pink-300 h-full rounded-full"
-                    style={{ width: `${attr.score}%` }}
-                  ></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* 3. Full Review List Area */}
         <div className="flex flex-col bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
           <div className="flex justify-between items-center mb-6">
