@@ -386,7 +386,7 @@ export async function exportToGoogleDocsAction(
     const url = `${API_BASE_URL}/api/dashboard/export/docs`;
 
     // API 명세서에 맞춘 Request Body 구성
-    const bodyData: Record<string, any> = {
+    const bodyData: Record<string, unknown> = {
       title,
       period,
       product_id: productId,

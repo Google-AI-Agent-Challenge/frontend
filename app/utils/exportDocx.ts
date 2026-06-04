@@ -19,13 +19,13 @@ export async function generateVocReport(
   aiBriefing: string,
   reviews: ReviewDocData[] = []
 ) {
-  const children: any[] = [
+  const children: Paragraph[] = [
     // 메인 타이틀
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 400 },
       border: {
-        bottom: { color: "CCCCCC", space: 1, value: BorderStyle.SINGLE, size: 6 },
+        bottom: { color: "CCCCCC", space: 1, style: BorderStyle.SINGLE, size: 6 },
       },
       children: [
         new TextRun({
@@ -168,7 +168,7 @@ export async function generateVocReport(
         new Paragraph({
           spacing: { after: isLast ? 200 : 300, line: 360 }, // 1.5x 줄간격
           border: isLast ? undefined : {
-            bottom: { color: "EEEEEE", space: 15, value: BorderStyle.SINGLE, size: 4 },
+            bottom: { color: "EEEEEE", space: 15, style: BorderStyle.SINGLE, size: 4 },
           },
           children: [
             new TextRun({ 

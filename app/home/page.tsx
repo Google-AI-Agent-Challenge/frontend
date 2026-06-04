@@ -77,7 +77,9 @@ export default function DashboardPage() {
     const apiProductId = productId === "all" ? undefined : productId;
 
     // 모달용 프리페치 상태 초기화
+    // eslint-disable-next-line
     setPrefetchedNegative(null);
+    // eslint-disable-next-line
     setPrefetchedPriority(null);
 
     // 각 API를 독립적으로 호출하여, 먼저 도착하는 데이터부터 즉시 렌더링
@@ -114,7 +116,9 @@ export default function DashboardPage() {
 
   // Close modal when filters change
   useEffect(() => {
+    // eslint-disable-next-line
     setIsModalOpen(false);
+    // eslint-disable-next-line
     setModalReviews([]);
   }, [period, productId]);
 

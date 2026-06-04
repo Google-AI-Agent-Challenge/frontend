@@ -14,6 +14,7 @@ import type { TrendingKeyword, NegativeTrendEntry } from "../types";
 interface MiddleChartsProps {
   keywords: TrendingKeyword[];
   negativeTrend: NegativeTrendEntry[];
+  period?: number;
 }
 
 interface ChartEntry {
@@ -40,17 +41,10 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
   return null;
 }
 
-function formatDateLabel(dateStr: string): string {
-  const parts = dateStr.split("-");
-  if (parts.length === 3) {
-    return `${parts[1]}/${parts[2]}`;
-  }
-  return dateStr;
-}
-
 export default function MiddleCharts({
   keywords,
   negativeTrend,
+  period,
 }: MiddleChartsProps) {
   const maxCount =
     keywords.length > 0 ? Math.max(...keywords.map((k) => k.count)) : 1;

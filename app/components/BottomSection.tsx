@@ -132,6 +132,7 @@ export default function BottomSection({
                 >
                   {/* 상단 타이틀 영역 */}
                   <div className="flex items-center gap-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src="/king.png"
                       alt="King Icon"
