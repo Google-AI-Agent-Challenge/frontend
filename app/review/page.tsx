@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import ExcelJS from "exceljs";
 import ReviewAnalysisBoard from "../components/ReviewAnalysisBoard";
 import ReviewAiPanel from "../components/ReviewAiPanel";
 
@@ -56,27 +57,75 @@ export default function ReviewPage() {
         return;
       }
 
-      const header = ["제품명", "작성자", "별점", "작성일", "감성", "이슈타입", "리뷰내용"];
-      const rows = exportReviews.map((r: Review) => [
-        r.products?.product_name || "-",
-        r.reviewer_type || "-",
-        r.rating,
-        r.review_date,
-        r.sentiment,
-        r.issue_type || "-",
-        `"${(r.review_text || "").replace(/"/g, '""').replace(/\n/g, ' ')}"`
-      ]);
+      // ExcelJS 워크북 생성
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("리뷰 데이터");
 
-      const csvContent = "\uFEFF" + [header, ...rows].map(e => e.join(",")).join("\n");
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      // 맞춤형 열 너비(Column Width) 설정
+      worksheet.columns = [
+        { header: "제품명", key: "product", width: 25 },
+        { header: "작성자", key: "reviewer", width: 15 },
+        { header: "별점", key: "rating", width: 15 },
+        { header: "작성일", key: "date", width: 25 },
+        { header: "감성", key: "sentiment", width: 15 },
+        { header: "이슈타입", key: "issue", width: 15 },
+        { header: "리뷰내용", key: "reviewText", width: 75 },
+      ];
+
+      // 헤더(첫 번째 행) 디자인 설정
+      const headerRow = worksheet.getRow(1);
+      headerRow.height = 30; // 행 높이 25~30
+      headerRow.eachCell((cell) => {
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFD9D9D9" }, // 옅은 회색 배경
+        };
+        cell.font = {
+          bold: true,
+        };
+        cell.alignment = {
+          vertical: "middle",
+          horizontal: "center",
+        };
+      });
+
+      // 데이터 추가 및 줄바꿈 속성 적용
+      exportReviews.forEach((r: Review) => {
+        const row = worksheet.addRow({
+          product: r.products?.product_name || "-",
+          reviewer: r.reviewer_type || "-",
+          rating: r.rating,
+          date: r.review_date,
+          sentiment: r.sentiment,
+          issue: r.issue_type || "-",
+          reviewText: r.review_text || "-",
+        });
+
+        // 텍스트 줄바꿈(Wrap Text) 적용 (7번째 열: 리뷰내용)
+        const reviewCell = row.getCell(7);
+        reviewCell.alignment = { wrapText: true, vertical: "top" };
+        
+        // 나머지 셀들의 기본 정렬
+        row.eachCell((cell, colNumber) => {
+          if (colNumber !== 7) {
+            cell.alignment = { vertical: "top", horizontal: "left" };
+          }
+        });
+      });
+
+      // 파일 생성 및 다운로드 (xlsx)
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
       const url = URL.createObjectURL(blob);
       
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `tones_reviews_${new Date().getTime()}.csv`);
+      link.setAttribute("download", `tones_reviews_${new Date().getTime()}.xlsx`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     } catch (err: unknown) {
       console.error("엑셀 다운로드 중 오류 발생:", err);
     } finally {
