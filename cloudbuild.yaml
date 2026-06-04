@@ -44,5 +44,11 @@ images:
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/tones-repo/tones-frontend:latest'
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/tones-repo/tones-frontend:$COMMIT_SHA'
 
+# 트리거에서 누락된 치환 변수가 있어도 빌드가 깨지지 않도록 기본값 선언
+# 실제 값은 deploy.sh(.env.local 읽기) 또는 Cloud Build 트리거 설정에서 주입해야 함
+substitutions:
+  _API_URL: ""
+  _GEMINI_API_KEY: ""
+
 options:
   logging: CLOUD_LOGGING_ONLY
