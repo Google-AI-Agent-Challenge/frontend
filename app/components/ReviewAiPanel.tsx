@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { Sparkles, Send } from "lucide-react";
 
 export default function ReviewAiPanel() {
   return (
@@ -11,8 +10,8 @@ export default function ReviewAiPanel() {
     >
       {/* 1. Header & Profile */}
       <div className="flex items-center gap-3 mb-8">
-        <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-pink-500 to-pink-300 shadow-[0_4px_12px_rgba(236,72,153,0.3)] flex items-center justify-center">
-          <Sparkles className="text-white" size={20} />
+        <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-pink-500 to-pink-300 shadow-[0_4px_12px_rgba(236,72,153,0.3)] flex items-center justify-center text-white font-extrabold text-[15px]">
+          AI
         </div>
         <div>
           <h2 className="text-lg font-bold text-gray-900 tracking-tight">
@@ -27,8 +26,7 @@ export default function ReviewAiPanel() {
       {/* 2. Insight Briefing Card */}
       <div className="bg-pink-50/60 rounded-2xl p-6 border border-pink-100 shadow-sm mb-6 flex flex-col gap-3 relative overflow-hidden transition-all hover:bg-pink-50">
         <div className="absolute top-0 left-0 w-1.5 h-full bg-pink-400"></div>
-        <div className="flex items-center gap-2">
-          <Sparkles className="text-pink-500" size={16} />
+        <div className="flex items-center">
           <h3 className="text-[15px] font-bold text-gray-900 tracking-tight">
             AI Insight Briefing
           </h3>
@@ -67,13 +65,10 @@ export default function ReviewAiPanel() {
         <input
           type="text"
           placeholder="명령어를 입력하거나 질문을 하세요..."
-          className="w-full bg-gray-50 border border-gray-200 text-[14px] font-medium rounded-2xl pl-5 pr-14 py-4 outline-none focus:bg-white focus:border-pink-400 focus:ring-4 focus:ring-pink-50 transition-all text-gray-900 placeholder-gray-400 shadow-inner"
+          className="w-full bg-gray-50 border border-gray-200 text-[14px] font-medium rounded-2xl pl-5 pr-20 py-4 outline-none focus:bg-white focus:border-pink-400 focus:ring-4 focus:ring-pink-50 transition-all text-gray-900 placeholder-gray-400 shadow-inner"
         />
-        <button className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center hover:bg-pink-500 hover:shadow-md transition-all cursor-pointer group">
-          <Send
-            size={16}
-            className="text-white group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform"
-          />
+        <button className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 bg-gray-900 text-white font-bold rounded-xl flex items-center justify-center hover:bg-pink-500 hover:shadow-md transition-all cursor-pointer text-xs">
+          전송
         </button>
       </div>
     </div>
