@@ -14,13 +14,13 @@ import type {
   DashboardInsights,
 } from "../types";
 
-// "use server" Server Action은 Node.js 서버에서만 실행되므로
-// 빌드 타임에 번들에 인라인되는 NEXT_PUBLIC_* 대신
-// 런타임에 주입되는 서버 전용 환경변수를 사용한다.
+// "use server" Server Action은 Node.js 서버에서만 실행된다.
+// Cloud Run 런타임 env var(API_URL)를 우선 사용하고,
+// 없을 경우 빌드 타임에 인라인된 NEXT_PUBLIC_API_URL로 폴백한다.
 const API_BASE_URL =
-  process.env.API_URL ??
-  process.env.NEXT_PUBLIC_API_URL ??
-  "http://localhost:8000";
+  process.env.API_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:8080";
 
 // ──────────────────────────────────────────────────────────
 // 제품 목록 조회
