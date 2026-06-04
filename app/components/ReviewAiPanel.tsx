@@ -21,7 +21,7 @@ export default function ReviewAiPanel({ productId }: ReviewAiPanelProps) {
     setIsLoading(true);
     try {
       const token = typeof window !== "undefined" ? localStorage.getItem("token") || "" : "";
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
       
       const response = await fetch(`${apiUrl}/api/ai/chat`, {
         method: "POST",
