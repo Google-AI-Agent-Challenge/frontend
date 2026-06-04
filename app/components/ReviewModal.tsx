@@ -43,7 +43,6 @@ export default function ReviewModal({
 
       {/* Modal Container */}
       <div className="relative bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 w-full max-w-3xl max-h-[85vh] flex flex-col z-10 overflow-hidden transform transition-all duration-300 scale-100 animate-in fade-in zoom-in-95 duration-200">
-        
         {/* Header */}
         <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100 bg-slate-50/50">
           <div className="flex items-center gap-3">
@@ -72,12 +71,16 @@ export default function ReviewModal({
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
               <div className="w-10 h-10 border-4 border-pink-200 border-t-pink-500 rounded-full animate-spin" />
-              <span className="text-sm font-bold text-gray-400">데이터를 분석 및 로딩 중입니다...</span>
+              <span className="text-sm font-bold text-gray-400">
+                데이터를 분석 및 로딩 중입니다...
+              </span>
             </div>
           ) : reviews.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-3">
               <AlertCircle size={40} className="text-gray-300" />
-              <span className="text-sm font-bold text-gray-400">조건에 일치하는 리뷰 데이터가 존재하지 않습니다.</span>
+              <span className="text-sm font-bold text-gray-400">
+                조건에 일치하는 리뷰 데이터가 존재하지 않습니다.
+              </span>
             </div>
           ) : (
             reviews.map((review, i) => (
@@ -125,45 +128,67 @@ export default function ReviewModal({
                         review.sentiment === "negative"
                           ? "bg-red-50 text-red-600 border-red-100"
                           : review.sentiment === "positive"
-                          ? "bg-green-50 text-green-600 border-green-100"
-                          : "bg-gray-50 text-gray-600 border-gray-100"
+                            ? "bg-green-50 text-green-600 border-green-100"
+                            : "bg-gray-50 text-gray-600 border-gray-100"
                       }`}
                     >
-                      {review.sentiment === "negative" ? "부정" : review.sentiment === "positive" ? "긍정" : "중립"}
+                      {review.sentiment === "negative"
+                        ? "부정"
+                        : review.sentiment === "positive"
+                          ? "긍정"
+                          : "중립"}
                     </span>
                   )}
                 </div>
 
                 {/* Review Text */}
                 <p className="text-[14px] text-gray-700 leading-relaxed font-medium">
-                  {review.review_text.split(/(붉어지고|트러블|자극적|수분감|진정|따갑|따가움|아쉬|아쉽|불편)/).map((part, index) => {
-                    if (['붉어지고', '트러블', '자극적', '수분감', '진정', '따갑', '따가움', '아쉬', '아쉽', '불편'].includes(part)) {
-                      return (
-                        <span
-                          key={index}
-                          className="bg-red-100/60 text-red-600 px-1 rounded font-bold"
-                        >
-                          {part}
-                        </span>
-                      );
-                    }
-                    return part;
-                  })}
+                  {review.review_text
+                    .split(
+                      /(붉어지고|트러블|자극적|수분감|진정|따갑|따가움|아쉬|아쉽|불편)/,
+                    )
+                    .map((part, index) => {
+                      if (
+                        [
+                          "붉어지고",
+                          "트러블",
+                          "자극적",
+                          "수분감",
+                          "진정",
+                          "따갑",
+                          "따가움",
+                          "아쉬",
+                          "아쉽",
+                          "불편",
+                        ].includes(part)
+                      ) {
+                        return (
+                          <span
+                            key={index}
+                            className="bg-red-100/60 text-red-600 px-1 rounded font-bold"
+                          >
+                            {part}
+                          </span>
+                        );
+                      }
+                      return part;
+                    })}
                 </p>
 
                 {/* AI Summary / Issue Type (if present) */}
                 {(review.ai_summary || review.issue_type) && (
                   <div className="mt-1 pt-3 border-t border-dashed border-gray-200 flex flex-col gap-1 bg-white/40 p-3 rounded-xl">
-                    {review.issue_type && (
+                    {/* {review.issue_type && (
                       <div className="flex gap-2 items-center">
                         <span className="text-[11px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-md">
                           이슈유형: {review.issue_type}
                         </span>
                       </div>
-                    )}
+                    )} */}
                     {review.ai_summary && (
                       <p className="text-[12px] text-gray-500 leading-normal">
-                        <strong className="text-gray-600">AI 요약:</strong> {review.ai_summary}
+                        <strong className="text-gray-600">AI 요약:</strong>{" "}
+                        {review.ai_summary}
                       </p>
                     )}
                   </div>

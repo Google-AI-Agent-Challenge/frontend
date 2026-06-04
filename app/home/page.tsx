@@ -24,7 +24,7 @@ import type {
 } from "../types";
 
 export default function DashboardPage() {
-  const [period, setPeriod] = useState<number>(30);
+  const [period, setPeriod] = useState<number>(9999);
   const [productId, setProductId] = useState<string>("all");
 
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
@@ -39,62 +39,117 @@ export default function DashboardPage() {
   const [modalReviews, setModalReviews] = useState<Review[]>([]);
   const [isModalLoading, setIsModalLoading] = useState<boolean>(false);
 
-  useEffect(() => {
-    async function loadDashboard() {
-      try {
-        const apiProductId = productId === "all" ? undefined : productId;
-        const [
-          summaryData,
-          keywordsData,
-          trendData,
-          insightsData,
-          briefingData,
-        ] = await Promise.all([
-          fetchDashboardSummaryAction(apiProductId, period),
-          fetchTrendingKeywordsAction(apiProductId, period),
-          fetchNegativeTrendAction(apiProductId, period),
-          fetchDashboardInsightsAction(apiProductId, period),
-          fetchAiBriefingAction(apiProductId, period),
-        ]);
+  const [prefetchedNegative, setPrefetchedNegative] = useState<Review[] | null>(null);
+  const [prefetchedPriority, setPrefetchedPriority] = useState<Review[] | null>(null);
 
-        setSummary(summaryData);
-        setKeywords(keywordsData);
-        setNegativeTrend(trendData);
-        setInsights(insightsData);
-        setAiBriefing(briefingData);
-      } catch (err: unknown) {
-        console.error("대시보드 데이터 로드 오류:", err);
-      }
+  // Helper function to fetch and format priority reviews
+  const loadPriorityReviews = async (summaryData: DashboardSummary) => {
+    if (summaryData.urgent_reviews_summary && summaryData.urgent_reviews_summary.length > 0) {
+      const ids = summaryData.urgent_reviews_summary.map((item) => item.id);
+      const data = await fetchReviewsByIdsAction(ids);
+      
+      const fetchedIds = data.map((r) => r.id);
+      const missingReviews: Review[] = summaryData.urgent_reviews_summary
+        .filter((item) => !fetchedIds.includes(item.id))
+        .map((item) => ({
+          id: item.id,
+          product_id: "unknown",
+          source: "mock",
+          reviewer_type: "general",
+          review_text: "💡 원문 데이터를 찾을 수 없어 AI 요약본으로 대체합니다:\n\n" + item.summary,
+          rating: item.rating,
+          review_date: new Date().toISOString().split("T")[0],
+          sentiment: "negative",
+          sentiment_score: 0,
+          keywords: [],
+          issue_type: "other",
+          ai_summary: item.summary,
+          created_at: new Date().toISOString(),
+          review_id: item.id,
+        }));
+        
+      return [...data, ...missingReviews];
     }
-    loadDashboard();
+    return [];
+  };
+
+  useEffect(() => {
+    const apiProductId = productId === "all" ? undefined : productId;
+
+    // 모달용 프리페치 상태 초기화
+    // eslint-disable-next-line
+    setPrefetchedNegative(null);
+    // eslint-disable-next-line
+    setPrefetchedPriority(null);
+
+    // 각 API를 독립적으로 호출하여, 먼저 도착하는 데이터부터 즉시 렌더링
+    fetchDashboardSummaryAction(apiProductId, period)
+      .then((data) => {
+        setSummary(data);
+        if (data) {
+          loadPriorityReviews(data).then(res => setPrefetchedPriority(res));
+        }
+      })
+      .catch((err) => console.error("summary 로드 오류:", err));
+
+    fetchTrendingKeywordsAction(apiProductId, period)
+      .then((data) => setKeywords(data))
+      .catch((err) => console.error("keywords 로드 오류:", err));
+
+    fetchNegativeTrendAction(apiProductId, period)
+      .then((data) => setNegativeTrend(data))
+      .catch((err) => console.error("negativeTrend 로드 오류:", err));
+
+    fetchDashboardInsightsAction(apiProductId, period)
+      .then((data) => setInsights(data))
+      .catch((err) => console.error("insights 로드 오류:", err));
+
+    fetchAiBriefingAction(apiProductId, period)
+      .then((data) => setAiBriefing(data))
+      .catch((err) => console.error("aiBriefing 로드 오류:", err));
+
+    // 부정 리뷰 프리페칭
+    fetchReviewsWithFilterAction(apiProductId, "negative", period, 5000, false)
+      .then((data) => setPrefetchedNegative(data))
+      .catch((err) => console.error("negative reviews 프리페치 오류:", err));
   }, [period, productId]);
 
   // Close modal when filters change
   useEffect(() => {
+    // eslint-disable-next-line
     setIsModalOpen(false);
+    // eslint-disable-next-line
     setModalReviews([]);
   }, [period, productId]);
 
   const handleCardClick = async (type: "negative" | "priority") => {
     setModalType(type);
     setIsModalOpen(true);
-    setIsModalLoading(true);
     setModalReviews([]);
 
-    try {
-      const apiProductId = productId === "all" ? undefined : productId;
-      
-      if (type === "negative") {
-        const data = await fetchReviewsWithFilterAction(apiProductId, "negative", period, 500, false);
-        setModalReviews(data);
+    if (type === "negative") {
+      if (prefetchedNegative) {
+        setModalReviews(prefetchedNegative);
       } else {
-        const data = await fetchReviewsWithFilterAction(apiProductId, undefined, period, 500, true);
+        setIsModalLoading(true);
+        const apiProductId = productId === "all" ? undefined : productId;
+        const data = await fetchReviewsWithFilterAction(apiProductId, "negative", period, 5000, false);
         setModalReviews(data);
+        setPrefetchedNegative(data);
+        setIsModalLoading(false);
       }
-    } catch (err) {
-      console.error("Failed to fetch reviews for modal:", err);
-    } finally {
-      setIsModalLoading(false);
+    } else {
+      if (prefetchedPriority) {
+        setModalReviews(prefetchedPriority);
+      } else {
+        setIsModalLoading(true);
+        if (summary) {
+          const data = await loadPriorityReviews(summary);
+          setModalReviews(data);
+          setPrefetchedPriority(data);
+        }
+        setIsModalLoading(false);
+      }
     }
   };
 
@@ -113,8 +168,15 @@ export default function DashboardPage() {
       {/* Phase 3: 중앙 차트 영역 */}
       <MiddleCharts keywords={keywords} negativeTrend={negativeTrend} period={period} />
 
-      {/* Phase 4: 하단 분석 리스트 & AI 우측 패널 */}
-      <BottomSection insights={insights} aiBriefing={aiBriefing} period={period} productId={productId} />
+      {/* Phase 4: 하단 주요 분석 및 브리핑 영역 */}
+      <BottomSection
+        insights={insights}
+        keywords={keywords}
+        aiBriefing={aiBriefing}
+        period={period}
+        productId={productId}
+        reviews={prefetchedPriority || []}
+      />
 
       {/* Review Details Modal */}
       <ReviewModal

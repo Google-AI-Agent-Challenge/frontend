@@ -14,7 +14,7 @@ import type { TrendingKeyword, NegativeTrendEntry } from "../types";
 interface MiddleChartsProps {
   keywords: TrendingKeyword[];
   negativeTrend: NegativeTrendEntry[];
-  period: number;
+  period?: number;
 }
 
 interface ChartEntry {
@@ -24,7 +24,7 @@ interface ChartEntry {
 
 interface CustomTooltipProps {
   active?: boolean;
-  payload?: { payload: any }[];
+  payload?: { payload: ChartEntry }[];
 }
 
 function CustomTooltip({ active, payload }: CustomTooltipProps) {
@@ -41,14 +41,6 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
   return null;
 }
 
-function formatDateLabel(dateStr: string): string {
-  const parts = dateStr.split("-");
-  if (parts.length === 3) {
-    return `${parts[1]}/${parts[2]}`;
-  }
-  return dateStr;
-}
-
 export default function MiddleCharts({
   keywords,
   negativeTrend,
@@ -57,29 +49,27 @@ export default function MiddleCharts({
   const maxCount =
     keywords.length > 0 ? Math.max(...keywords.map((k) => k.count)) : 1;
 
-  const chartData: any[] = [];
+  const chartData: ChartEntry[] = [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const intervalDays = period === 7 ? 7 : 30;
-
   for (let i = 3; i >= 0; i--) {
-    const periodEnd = new Date(today);
-    periodEnd.setDate(today.getDate() - i * intervalDays);
+    const weekEnd = new Date(today);
+    weekEnd.setDate(today.getDate() - i * 7);
 
-    const periodStart = new Date(periodEnd);
-    periodStart.setDate(periodEnd.getDate() - (intervalDays - 1));
+    const weekStart = new Date(weekEnd);
+    weekStart.setDate(weekEnd.getDate() - 6);
 
     let count = 0;
     negativeTrend.forEach((entry) => {
       const entryDate = new Date(entry.date);
       entryDate.setHours(0, 0, 0, 0);
-      if (entryDate >= periodStart && entryDate <= periodEnd) {
+      if (entryDate >= weekStart && entryDate <= weekEnd) {
         count += entry.count;
       }
     });
 
-    const name = `${periodEnd.getMonth() + 1}/${periodEnd.getDate()}`;
+    const name = `${weekEnd.getMonth() + 1}/${weekEnd.getDate()}`;
     chartData.push({ name, count });
   }
 
@@ -101,7 +91,7 @@ export default function MiddleCharts({
                 const widthPct = Math.round((item.count / maxCount) * 100);
                 return (
                   <div key={item.keyword} className="flex items-center gap-10">
-                    <div className="w-2 text-center font-bold text-gray-800 text-[20px]">
+                    <div className="w-1 text-center font-bold text-gray-800 text-[20px]">
                       {idx + 1}
                     </div>
                     <div className="w-16 whitespace-nowrap font-semibold text-gray-800 text-[20px]">

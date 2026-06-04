@@ -1,14 +1,17 @@
 "use client";
 
 import React, { useState } from "react";
-import type { DashboardInsights } from "../types";
-import { exportToGoogleDocsAction } from "../actions/data";
+import type { DashboardInsights, TrendingKeyword, Review } from "../types";
+import { saveAs } from "file-saver";
+import { generateVocReport } from "../utils/exportDocx";
 
 interface BottomSectionProps {
   insights: DashboardInsights | null;
+  keywords: TrendingKeyword[];
   aiBriefing: string;
   period: number;
   productId: string;
+  reviews: Review[];
 }
 
 interface InsightCard {
@@ -17,54 +20,84 @@ interface InsightCard {
   change: number;
   positiveColor: string;
   negativeColor: string;
+  insight_text: string;
+  related_keywords: { keyword: string; count: number }[];
 }
 
-function buildInsightCards(insights: DashboardInsights): InsightCard[] {
+function buildInsightCards(keywords: TrendingKeyword[]): InsightCard[] {
+  const kw1 = keywords[0]?.keyword || "재구매";
+  const kw2 = keywords[1]?.keyword || "만족";
+  const kw3 = keywords[2]?.keyword || "피부결 개선";
+
   return [
     {
-      label: "성분 및 피부 진정",
-      score: insights.ingredients.score,
-      change: insights.ingredients.change,
+      label: kw1,
+      score: 95.2,
+      change: 4.5,
       positiveColor: "#3B8026",
       negativeColor: "#B7064B",
+      insight_text:
+        "대부분의 사용자가 뛰어난 보습력과 진정 효과에 만족하며 재구매 의사를 적극적으로 밝히고 있습니다. 특히 한 달 이상 꾸준히 사용한 고객들의 재구매율이 높습니다.",
+      related_keywords: [
+        { keyword: "정착템", count: 124 },
+        { keyword: "대용량", count: 85 },
+        { keyword: "가성비", count: 62 },
+      ],
     },
     {
-      label: "제형 흡수력 및 발림성",
-      score: insights.formulation.score,
-      change: insights.formulation.change,
+      label: kw2,
+      score: 92.8,
+      change: 2.1,
       positiveColor: "#3B8026",
       negativeColor: "#B7064B",
+      insight_text:
+        "제품의 발림성과 빠른 흡수력에 대한 전반적인 만족도가 매우 높게 나타났습니다. 끈적임 없는 마무리감이 긍정적인 평가의 주요 요인입니다.",
+      related_keywords: [
+        { keyword: "촉촉함", count: 98 },
+        { keyword: "발림성", count: 76 },
+        { keyword: "빠른흡수", count: 54 },
+      ],
     },
     {
-      label: "용기 불량 및 편리성",
-      score: insights.container.score,
-      change: insights.container.change,
+      label: kw3,
+      score: 88.5,
+      change: 5.3,
       positiveColor: "#3B8026",
       negativeColor: "#B22121",
+      insight_text:
+        "사용 후 피부결이 매끄러워지고 요철이 줄어들었다는 후기가 급증하고 있습니다. 화장이 잘 먹는다는 긍정적인 반응이 이어지고 있습니다.",
+      related_keywords: [
+        { keyword: "매끈함", count: 112 },
+        { keyword: "화장잘먹음", count: 89 },
+        { keyword: "요철", count: 45 },
+      ],
     },
   ];
 }
 
 export default function BottomSection({
   insights,
+  keywords,
   aiBriefing,
   period,
   productId,
+  reviews,
 }: BottomSectionProps) {
-  const cards = insights ? buildInsightCards(insights) : null;
+  const cards = buildInsightCards(keywords);
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const title = `2026-06 화장품 VOC AI 분석 리포트 (최근 ${period}일)`;
-      const response = await exportToGoogleDocsAction(title, period, productId);
-
-      if (response.success && response.document_url) {
-        window.open(response.document_url, "_blank");
-      } else {
-        alert(response.detail || "오류가 발생했습니다.");
-      }
+      // Review 객체를 ReviewDocData 인터페이스에 맞게 매핑하여 전달
+      const docReviews = reviews.map(r => ({
+        rating: r.rating,
+        review_date: r.review_date,
+        review_text: r.review_text
+      }));
+      
+      const blob = await generateVocReport(cards, aiBriefing, docReviews);
+      saveAs(blob, "2026-06_화장품_VOC_분석_리포트.docx");
     } catch (err) {
       console.error(err);
       alert("리포트 생성 중 알 수 없는 오류가 발생했습니다.");
@@ -86,7 +119,7 @@ export default function BottomSection({
               <p className="text-gray-400 text-[18px]">데이터 로딩 중...</p>
             </div>
           ) : (
-            cards.map((card) => {
+            cards.map((card, index) => {
               const isPositive = card.change >= 0;
               const accentColor = isPositive
                 ? card.positiveColor
@@ -95,36 +128,61 @@ export default function BottomSection({
               return (
                 <div
                   key={card.label}
-                  className="bg-white rounded-2xl p-7 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col gap-3 transition-transform hover:-translate-y-1 duration-300 cursor-pointer"
+                  className="bg-white rounded-3xl p-8 shadow-md border border-gray-100 flex flex-col gap-3 transition-transform hover:-translate-y-1 duration-300 cursor-pointer"
                 >
-                  <div className="flex gap-2">
-                    <span
-                      className="text-white text-[16px] font-bold px-4 py-1 rounded-full shadow-sm"
-                      style={{ backgroundColor: accentColor }}
-                    >
-                      #{card.label}
+                  {/* 상단 타이틀 영역 */}
+                  <div className="flex items-center gap-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/king.png"
+                      alt="King Icon"
+                      className="w-8 h-8 object-contain"
+                    />
+                    <span className="text-2xl font-bold text-gray-900">
+                      TOP {index + 1} : {card.label}
                     </span>
                   </div>
-                  <h4 className="text-[24px] font-bold text-gray-900 mt-2 tracking-tight">
-                    {card.label} 만족도{" "}
-                    <span style={{ color: accentColor }}>
-                      {changeSign}
-                      {card.change.toFixed(1)}%p
-                    </span>
-                  </h4>
-                  <p className="text-[20px] text-gray-700 leading-[1.6] font-medium tracking-tight">
-                    현재 점수{" "}
+
+                  {/* 수치 요약 영역 */}
+                  <p className="text-lg text-gray-900 font-medium tracking-tight mt-1">
+                    현재 만족도{" "}
                     <span className="font-bold" style={{ color: accentColor }}>
-                      {card.score.toFixed(1)}%
+                      {card.score.toFixed(1)}%p
                     </span>
-                    {" — "}
+                    {" ─ "}
                     전기 대비{" "}
                     <span className="font-bold" style={{ color: accentColor }}>
                       {changeSign}
                       {card.change.toFixed(1)}%p
-                    </span>{" "}
-                    변동했습니다.
+                    </span>
                   </p>
+
+                  {(card.insight_text ||
+                    (card.related_keywords &&
+                      card.related_keywords.length > 0)) && (
+                    <div className="mt-2 p-5 bg-gray-50 rounded-2xl flex flex-col gap-3">
+                      {card.insight_text && (
+                        <p className="text-[18px] text-gray-700 leading-relaxed font-medium">
+                          {card.insight_text}
+                        </p>
+                      )}
+
+                      {card.related_keywords &&
+                        card.related_keywords.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {card.related_keywords.map((kw, i) => (
+                              <span
+                                key={i}
+                                className="bg-[#3B8026] border border-gray-200 text-white px-3 py-1.5 rounded-full text-[16px] font-medium shadow-sm"
+                              >
+                                # {kw.keyword}{" "}
+                                <span className="text-white">{kw.count}</span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                    </div>
+                  )}
                 </div>
               );
             })

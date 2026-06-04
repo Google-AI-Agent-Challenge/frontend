@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import Sidebar from "./components/Sidebar";
+import { Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
+
+const notoSansKr = Noto_Sans_KR({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "TONES",
@@ -18,15 +25,9 @@ export default function RootLayout({
   return (
     <html lang="ko" className="h-full">
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
         <link rel="icon" href="/favicon.png" />
       </head>
-      <body className="flex h-full w-full overflow-hidden bg-background">
+      <body className={`${notoSansKr.className} flex h-full w-full overflow-hidden bg-background`}>
         <Sidebar />
         <main className="flex-1 flex flex-col h-full overflow-hidden relative">
           {children}

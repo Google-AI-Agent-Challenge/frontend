@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Download, Search, Star, Sparkles, Image as ImageIcon } from "lucide-react";
 import type { Review, Product } from "../types";
 
 interface ReviewAnalysisBoardProps {
@@ -150,9 +149,8 @@ export default function ReviewAnalysisBoard({
         </div>
         <button
           onClick={onExportExcel}
-          className="flex items-center gap-2 bg-white border border-pink-200 text-pink-600 font-bold px-4 py-2.5 rounded-xl shadow-sm hover:bg-pink-50 transition-colors"
+          className="flex items-center bg-white border border-pink-200 text-pink-600 font-bold px-4 py-2.5 rounded-xl shadow-sm hover:bg-pink-50 transition-colors"
         >
-          <Download size={18} />
           <span>데이터 내보내기</span>
         </button>
       </div>
@@ -216,8 +214,7 @@ export default function ReviewAnalysisBoard({
       <div className="flex flex-col gap-6 mb-8">
         {/* 2. Skincare Attribute Score Area */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col">
-          <div className="flex items-center gap-2 mb-6">
-            <Sparkles className="text-pink-500" size={20} />
+          <div className="flex items-center mb-6">
             <h3 className="text-lg font-bold text-gray-900 tracking-tight">스킨케어 속성 점수</h3>
           </div>
           
@@ -251,13 +248,12 @@ export default function ReviewAnalysisBoard({
               <span className="text-sm font-bold text-pink-600 bg-pink-50 px-2.5 py-0.5 rounded-full">{totalCount.toLocaleString()}건</span>
             </div>
             <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
               <input
                 type="text"
                 placeholder="리뷰 검색..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-200 text-sm font-medium rounded-full pl-9 pr-4 py-2 outline-none focus:border-pink-300 focus:ring-1 focus:ring-pink-300 transition-all text-gray-800 placeholder-gray-400"
+                className="w-full bg-gray-50 border border-gray-200 text-sm font-medium rounded-full pl-4 pr-4 py-2 outline-none focus:border-pink-300 focus:ring-1 focus:ring-pink-300 transition-all text-gray-800 placeholder-gray-400"
               />
             </div>
           </div>
@@ -272,10 +268,8 @@ export default function ReviewAnalysisBoard({
                     <div className="flex justify-between items-start">
                       <div className="flex flex-col gap-1.5">
                         <div className="flex items-center gap-2">
-                          <div className="flex gap-0.5">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <Star key={i} size={14} className={i < review.rating ? "text-pink-500 fill-pink-500" : "text-gray-200 fill-gray-200"} />
-                            ))}
+                          <div className="flex gap-0.5 text-pink-500 text-sm">
+                            {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}
                           </div>
                           <span className="text-xs font-bold text-gray-400">{review.date}</span>
                         </div>
@@ -322,18 +316,17 @@ export default function ReviewAnalysisBoard({
 
         {/* 4. Bottom Product Lineup Area */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col">
-          <div className="flex items-center gap-2 mb-6">
-            <ImageIcon className="text-pink-500" size={20} />
+          <div className="flex items-center mb-6">
             <h3 className="text-lg font-bold text-gray-900 tracking-tight">제품 라인업</h3>
           </div>
           
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+          <div className="flex flex-wrap gap-2.5">
             {PRODUCT_STYLE_MAP.map((prod, idx) => {
               const matchedProduct = products.find(p => p.product_name?.includes(prod.keyword) || (prod.keyword === '당근' && p.product_name?.includes('캐롯')) || (prod.keyword === '미나리' && p.product_name?.includes('파슬리')));
               const isSelected = matchedProduct && selectedProductId === matchedProduct.id;
               
               return (
-              <div 
+              <button 
                 key={idx} 
                 onClick={() => {
                   if (matchedProduct) {
@@ -342,15 +335,14 @@ export default function ReviewAnalysisBoard({
                     onProductSelect?.(newId === "all" ? null : newId);
                   }
                 }}
-                className={`bg-transparent p-2 flex flex-col items-center justify-center gap-3 transition-transform hover:-translate-y-1 cursor-pointer group ${isSelected ? 'scale-110 drop-shadow-md' : 'opacity-70 hover:opacity-100'}`}
+                className={`px-4 py-2 rounded-full text-[14px] font-bold transition-all border cursor-pointer ${
+                  isSelected 
+                    ? 'bg-[#F9A2C0] text-white border-[#F9A2C0] shadow-sm scale-105' 
+                    : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                }`}
               >
-                <div className="flex items-center justify-center transition-transform group-hover:scale-110">
-                  <img src={prod.imgSrc} alt={prod.keyword} className="w-12 h-12 object-contain drop-shadow-none" />
-                </div>
-                <div className="text-center">
-                  <div className={`text-[13px] font-bold ${isSelected ? 'text-pink-600' : 'text-gray-800'}`}>{prod.keyword}</div>
-                </div>
-              </div>
+                {prod.keyword}
+              </button>
             )})}
           </div>
         </div>

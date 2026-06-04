@@ -149,17 +149,14 @@ export async function fetchReviewsByIdsAction(
   }
 
   try {
-    const params = new URLSearchParams();
-    params.append("ids", ids.join(","));
-
-    const res = await fetch(
-      `${API_BASE_URL}/api/reviews/batch?${params.toString()}`,
-    );
-    if (!res.ok) {
-      throw new Error(`fetchReviewsByIdsAction Error: ${res.statusText}`);
-    }
-    const data = await res.json();
-    return data as Review[];
+    // 백엔드에 /api/reviews/batch 엔드포인트가 없으므로,
+    // priority=true 인 전체 리뷰를 가져와서 ID로 필터링합니다.
+    const allPriorityReviews = await fetchReviewsWithFilterAction(undefined, undefined, undefined, 5000, true);
+    
+    const filteredReviews = allPriorityReviews.filter(review => ids.includes(review.id));
+    
+    // 요청한 ID 순서대로 정렬
+    return filteredReviews.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
   } catch (error) {
     console.error("[fetchReviewsByIdsAction]", error);
     return [];
@@ -335,15 +332,33 @@ export async function fetchReviewsWithFilterAction(
     if (priority) {
       params.append("priority", "true");
     }
-    params.append("limit", limit.toString());
 
-    const res = await fetch(`${API_BASE_URL}/api/reviews?${params.toString()}`);
-    if (!res.ok) {
-      console.error(`fetchReviewsWithFilterAction Error: ${res.status}`);
-      return [];
+    let allReviews: Review[] = [];
+    let page = 1;
+    let hasMore = true;
+
+    while (hasMore) {
+      params.set("page", page.toString());
+      // 백엔드가 한 번에 반환할 수 있는 최대치가 50일 수 있으므로 50으로 청크 요청
+      params.set("limit", "50");
+
+      const res = await fetch(`${API_BASE_URL}/api/reviews?${params.toString()}`);
+      if (!res.ok) {
+        console.error(`fetchReviewsWithFilterAction Error: ${res.status}`);
+        break;
+      }
+      
+      const data = await res.json() as Review[];
+      allReviews = allReviews.concat(data);
+
+      if (data.length < 50 || allReviews.length >= limit) {
+        hasMore = false;
+      } else {
+        page++;
+      }
     }
-    const data = await res.json();
-    return data as Review[];
+
+    return allReviews.slice(0, limit);
   } catch (error) {
     console.error("[fetchReviewsWithFilterAction]", error);
     return [];
@@ -371,7 +386,7 @@ export async function exportToGoogleDocsAction(
     const url = `${API_BASE_URL}/api/dashboard/export/docs`;
 
     // API 명세서에 맞춘 Request Body 구성
-    const bodyData: Record<string, any> = {
+    const bodyData: Record<string, unknown> = {
       title,
       period,
       product_id: productId,

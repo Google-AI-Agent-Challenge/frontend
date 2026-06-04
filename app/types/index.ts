@@ -126,6 +126,8 @@ export interface NegativeTrendEntry {
 export interface AttributeScore {
   score: number;
   change: number;
+  insight_text?: string;
+  related_keywords?: { keyword: string; count: number }[];
 }
 
 export interface DashboardInsights {

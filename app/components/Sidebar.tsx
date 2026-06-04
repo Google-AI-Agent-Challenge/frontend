@@ -35,18 +35,19 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="flex flex-col bg-background shadow-[0_0_20px_rgba(0,0,0,0.06)] z-10"
+      className="flex flex-col bg-white shadow-[0_0_20px_rgba(0,0,0,0.06)] z-10 overflow-hidden"
       style={{
-        width: "200px",
-        minWidth: "200px",
+        width: "240px",
+        minWidth: "240px",
+        height: "calc(100vh - 32px)",
         padding: "32px 0 24px 0",
         borderRadius: "32px",
         margin: "16px 8px 16px 16px",
       }}
     >
       {/* Logo */}
-      <div className="flex flex-col items-center mb-8 px-4">
-        <div className="flex items-center justify-center mb-8 h-8 w-full">
+      <div className="flex flex-col items-center mb-5 px-4 shrink-0">
+        <div className="flex items-center justify-center mb-5 h-9 w-full">
           <Image
             src="/logo-black.png"
             alt="TONES Logo"
@@ -59,7 +60,7 @@ export default function Sidebar() {
 
         {/* User Profile */}
         <div className="flex flex-col items-center">
-          <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 mb-3 shadow-inner">
+          <div className="w-[72px] h-[72px] rounded-full overflow-hidden bg-gray-100 mb-3 shadow-inner">
             <img
               src="/profile.png"
               alt="User Avatar"
@@ -67,19 +68,19 @@ export default function Sidebar() {
             />
           </div>
           <div className="flex items-center gap-1.5 mb-1">
-            <span className="bg-[#F9A2C0] text-white text-[12px] font-bold px-2 py-0.5 rounded-full">
+            <span className="bg-[#F9A2C0] text-white text-[12px] font-bold px-2.5 py-0.5 rounded-full">
               관리자
             </span>
-            <span className="text-s font-bold text-gray-900">홍한희</span>
+            <span className="text-[18px] font-bold text-gray-900">홍한희</span>
           </div>
-          <span className="text-[12px] text-gray-400 scale-90 origin-top">
+          <span className="text-[12px] text-gray-400">
             hanhui1823@gmail.com
           </span>
         </div>
       </div>
 
       {/* Icons */}
-      <nav className="flex flex-col gap-4 px-6 flex-1 mt-4">
+      <nav className="flex flex-col px-5 flex-1 mt-2 gap-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
 
@@ -87,28 +88,43 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`group flex flex-col items-center justify-center gap-2 py-4 rounded-2xl transition-all duration-200 w-full ${isActive
-                ? "bg-[#111827] text-white shadow-lg shadow-black/10 scale-105"
-                : "bg-transparent text-gray-900 hover:bg-[#111827] hover:text-white"
-                }`}
+              className="group flex flex-col items-center justify-center relative w-full py-4 rounded-3xl transition-all duration-200 shrink-0"
             >
-              {/* 1. 검은색 아이콘 (평소 상태) */}
-              <img
-                src={item.iconBlack}
-                alt={`${item.label} 기본`}
-                className={`w-13 h-13 transition-all duration-200 ${isActive ? "hidden" : "block group-hover:hidden"
-                  }`}
+              {/* Background Card Layer - inset-x and inset-y to make the hover background smaller than the touch target */}
+              <div
+                className={`absolute inset-y-0.5 inset-x-2 rounded-3xl transition-all duration-200 ${
+                  isActive
+                    ? "bg-[#111827] shadow-lg shadow-black/10 z-0"
+                    : "bg-transparent group-hover:bg-[#111827] z-0"
+                }`}
               />
 
-              {/* 2. 흰색 아이콘 (Hover 상태이거나 Active 상태일 때) */}
-              <img
-                src={item.iconWhite}
-                alt={`${item.label} 활성`}
-                className={`w-13 h-13 transition-all duration-200 ${isActive ? "block" : "hidden group-hover:block"
+              {/* Content Container (z-10 to stay on top of the background layer) */}
+              <div
+                className={`z-10 flex flex-col items-center justify-center gap-2 transition-all duration-200 ${
+                  isActive ? "text-white" : "text-gray-900 group-hover:text-white"
+                }`}
+              >
+                {/* 1. 검은색 아이콘 (평소 상태) */}
+                <img
+                  src={item.iconBlack}
+                  alt={`${item.label} 기본`}
+                  className={`w-12 h-12 transition-all duration-200 ${
+                    isActive ? "hidden" : "block group-hover:hidden"
                   }`}
-              />
+                />
 
-              <span className={`text-s font-bold`}>{item.label}</span>
+                {/* 2. 흰색 아이콘 (Hover 상태이거나 Active 상태일 때) */}
+                <img
+                  src={item.iconWhite}
+                  alt={`${item.label} 활성`}
+                  className={`w-12 h-12 transition-all duration-200 ${
+                    isActive ? "block" : "hidden group-hover:block"
+                  }`}
+                />
+
+                <span className="text-[16px] font-bold">{item.label}</span>
+              </div>
             </Link>
           );
         })}
