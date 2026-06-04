@@ -63,7 +63,7 @@ export async function sendMessage(userInput: string): Promise<AiResponse> {
     console.log("[chat action] Extracted Filters:", filters);
 
     // Stage 2: 동적 쿼리 실행 (GCP 커스텀 API fetch 호출)
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+    const API_BASE_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
     const params = new URLSearchParams();
 
     if (filters.productName) {

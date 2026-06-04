@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import ExcelJS from "exceljs";
 import ReviewAnalysisBoard from "../components/ReviewAnalysisBoard";
 import ReviewAiPanel from "../components/ReviewAiPanel";
@@ -19,6 +19,18 @@ export default function ReviewPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [activeAiMessage, setActiveAiMessage] = useState<Message | null>(null);
+
+  const displayReviews = useMemo(() => {
+    if (activeAiMessage?.matchedReviewIds && activeAiMessage.matchedReviewIds.length > 0) {
+      const validFiltered = reviews.filter((r) => activeAiMessage.matchedReviewIds?.includes(r.id));
+      if (validFiltered.length === 0 && activeAiMessage.matchedReviewIds.some((id) => id.startsWith("doc_"))) {
+        return reviews.slice(0, activeAiMessage.matchedReviewIds.length);
+      }
+      return validFiltered;
+    }
+    return reviews;
+  }, [reviews, activeAiMessage]);
 
   useEffect(() => {
     async function init() {
@@ -153,13 +165,20 @@ export default function ReviewPage() {
     <>
       <div className="flex-1 flex h-full overflow-hidden bg-white w-full">
         <ReviewAnalysisBoard
-          reviews={reviews}
+          reviews={displayReviews}
           products={products}
           isLoading={isLoading}
-          onExportExcel={(filtered) => handleExportExcel(filtered)}
-          onProductSelect={(id) => setSelectedProductId(id)}
+          onExportExcel={(filtered) => handleExportExcel(filtered, activeAiMessage || undefined)}
+          onProductSelect={(id) => {
+            setSelectedProductId(id);
+            setActiveAiMessage(null);
+          }}
         />
-        <ReviewAiPanel productId={selectedProductId} />
+        <ReviewAiPanel
+          productId={selectedProductId}
+          onMessageReceived={(msg) => setActiveAiMessage(msg)}
+          activeAiMessage={activeAiMessage}
+        />
       </div>
     </>
   );

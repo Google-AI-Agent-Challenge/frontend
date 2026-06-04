@@ -2,12 +2,19 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
+import type { Message } from "../types";
 
 interface ReviewAiPanelProps {
   productId?: string | null;
+  onMessageReceived?: (message: Message | null) => void;
+  activeAiMessage?: Message | null;
 }
 
-export default function ReviewAiPanel({ productId }: ReviewAiPanelProps) {
+export default function ReviewAiPanel({
+  productId,
+  onMessageReceived,
+  activeAiMessage,
+}: ReviewAiPanelProps) {
   const [chatInput, setChatInput] = useState("");
   const [aiBriefing, setAiBriefing] = useState(
     "명령어를 입력하거나 하단의 추천 명령어를 클릭해 보세요. AI가 선택된 제품의 리뷰를 분석하여 인사이트를 제공합니다."
@@ -21,7 +28,7 @@ export default function ReviewAiPanel({ productId }: ReviewAiPanelProps) {
     setIsLoading(true);
     try {
       const token = typeof window !== "undefined" ? localStorage.getItem("token") || "" : "";
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "http://localhost:8080";
       
       const response = await fetch(`${apiUrl}/api/ai/chat`, {
         method: "POST",
@@ -40,8 +47,20 @@ export default function ReviewAiPanel({ productId }: ReviewAiPanelProps) {
       }
 
       const data = await response.json();
-      setAiBriefing(data.answer || "응답 내용이 없습니다.");
+      const answer = data.answer || "응답 내용이 없습니다.";
+      setAiBriefing(answer);
       setChatInput("");
+
+      if (onMessageReceived) {
+        const matchedReviewIds = data.referenced_reviews
+          ? data.referenced_reviews.map((r: { id: string }) => r.id)
+          : [];
+        onMessageReceived({
+          role: "ai",
+          content: answer,
+          matchedReviewIds: matchedReviewIds,
+        });
+      }
     } catch (error) {
       console.error(error);
       setAiBriefing("데이터를 불러오는 중 오류가 발생했습니다.");
@@ -78,10 +97,21 @@ export default function ReviewAiPanel({ productId }: ReviewAiPanelProps) {
       {/* 2. Insight Briefing Card */}
       <div className="bg-pink-50/60 rounded-2xl p-6 border border-pink-100 shadow-sm mb-6 flex flex-col gap-3 relative overflow-hidden transition-all hover:bg-pink-50 min-h-[140px]">
         <div className="absolute top-0 left-0 w-1.5 h-full bg-pink-400"></div>
-        <div className="flex items-center">
+        <div className="flex items-center justify-between">
           <h3 className="text-[15px] font-bold text-gray-900 tracking-tight">
             AI Insight Briefing
           </h3>
+          {activeAiMessage && (
+            <button
+              onClick={() => {
+                setAiBriefing("명령어를 입력하거나 하단의 추천 명령어를 클릭해 보세요. AI가 선택된 제품의 리뷰를 분석하여 인사이트를 제공합니다.");
+                onMessageReceived?.(null);
+              }}
+              className="text-xs font-bold text-pink-600 hover:text-pink-800 bg-pink-100 hover:bg-pink-200 px-2.5 py-1 rounded-full transition-all cursor-pointer"
+            >
+              필터 초기화
+            </button>
+          )}
         </div>
         {isLoading ? (
           <div className="flex flex-col gap-2 animate-pulse mt-1">
