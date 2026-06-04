@@ -37,7 +37,7 @@ steps:
       '--max-instances', '3',
       '--cpu', '1',
       '--memory', '512Mi',
-      '--set-env-vars', 'API_URL=$_API_URL',
+      '--set-env-vars', 'API_URL=$_API_URL,GEMINI_API_KEY=$_GEMINI_API_KEY',
     ]
 
 images:
