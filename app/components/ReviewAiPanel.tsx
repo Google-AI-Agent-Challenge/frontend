@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 
 export default function ReviewAiPanel() {
   return (
@@ -10,9 +11,14 @@ export default function ReviewAiPanel() {
     >
       {/* 1. Header & Profile */}
       <div className="flex items-center gap-3 mb-8">
-        <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-pink-500 to-pink-300 shadow-[0_4px_12px_rgba(236,72,153,0.3)] flex items-center justify-center text-white font-extrabold text-[15px]">
-          AI
-        </div>
+        <Image
+          src="/favicon.png"
+          alt="TONES Logo"
+          width={60}
+          height={60}
+          className="ai-img"
+          priority
+        />
         <div>
           <h2 className="text-lg font-bold text-gray-900 tracking-tight">
             AI 어시스턴트

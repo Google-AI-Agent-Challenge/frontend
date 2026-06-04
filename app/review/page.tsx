@@ -41,7 +41,7 @@ export default function ReviewPage() {
     init();
   }, []);
 
-  const handleExportExcel = async (msg?: Message) => {
+  const handleExportExcel = async (filtered?: Review[], msg?: Message) => {
     try {
       setIsLoading(true);
       let exportReviews: Review[] = reviews;
@@ -50,6 +50,8 @@ export default function ReviewPage() {
         exportReviews = await fetchReviewsByIdsAction(msg.matchedReviewIds);
       } else if (msg?.keywords && msg.keywords.length > 0) {
         exportReviews = await fetchReviewsByKeywordsAction(msg.keywords, 100);
+      } else if (filtered && filtered.length > 0) {
+        exportReviews = filtered;
       }
 
       if (exportReviews.length === 0) {
@@ -82,6 +84,7 @@ export default function ReviewPage() {
           fgColor: { argb: "FFD9D9D9" }, // 옅은 회색 배경
         };
         cell.font = {
+          name: "맑은 고딕",
           bold: true,
         };
         cell.alignment = {
@@ -92,23 +95,30 @@ export default function ReviewPage() {
 
       // 데이터 추가 및 줄바꿈 속성 적용
       exportReviews.forEach((r: Review) => {
+        // 감성 번역
+        const sentimentMap: Record<string, string> = {
+          positive: "긍정",
+          neutral: "중립",
+          negative: "부정",
+        };
+        const sentimentKor = r.sentiment ? sentimentMap[r.sentiment] || r.sentiment : "-";
+
         const row = worksheet.addRow({
           product: r.products?.product_name || "-",
           reviewer: r.reviewer_type || "-",
           rating: r.rating,
           date: r.review_date,
-          sentiment: r.sentiment,
+          sentiment: sentimentKor,
           issue: r.issue_type || "-",
           reviewText: r.review_text || "-",
         });
 
-        // 텍스트 줄바꿈(Wrap Text) 적용 (7번째 열: 리뷰내용)
-        const reviewCell = row.getCell(7);
-        reviewCell.alignment = { wrapText: true, vertical: "top" };
-
-        // 나머지 셀들의 기본 정렬
+        // 텍스트 줄바꿈(Wrap Text) 및 글꼴 설정
         row.eachCell((cell, colNumber) => {
-          if (colNumber !== 7) {
+          cell.font = { name: "맑은 고딕" };
+          if (colNumber === 7) {
+            cell.alignment = { wrapText: true, vertical: "top" };
+          } else {
             cell.alignment = { vertical: "top", horizontal: "left" };
           }
         });
@@ -145,7 +155,7 @@ export default function ReviewPage() {
           reviews={reviews}
           products={products}
           isLoading={isLoading}
-          onExportExcel={() => handleExportExcel()}
+          onExportExcel={(filtered) => handleExportExcel(filtered)}
         />
         <ReviewAiPanel />
       </div>

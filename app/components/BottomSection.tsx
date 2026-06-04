@@ -95,7 +95,7 @@ export default function BottomSection({
         review_date: r.review_date,
         review_text: r.review_text
       }));
-      
+
       const blob = await generateVocReport(cards, aiBriefing, docReviews);
       saveAs(blob, "2026-06_화장품_VOC_분석_리포트.docx");
     } catch (err) {
@@ -160,29 +160,29 @@ export default function BottomSection({
                   {(card.insight_text ||
                     (card.related_keywords &&
                       card.related_keywords.length > 0)) && (
-                    <div className="mt-2 p-5 bg-gray-50 rounded-2xl flex flex-col gap-3">
-                      {card.insight_text && (
-                        <p className="text-[18px] text-gray-700 leading-relaxed font-medium">
-                          {card.insight_text}
-                        </p>
-                      )}
-
-                      {card.related_keywords &&
-                        card.related_keywords.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            {card.related_keywords.map((kw, i) => (
-                              <span
-                                key={i}
-                                className="bg-[#3B8026] border border-gray-200 text-white px-3 py-1.5 rounded-full text-[16px] font-medium shadow-sm"
-                              >
-                                # {kw.keyword}{" "}
-                                <span className="text-white">{kw.count}</span>
-                              </span>
-                            ))}
-                          </div>
+                      <div className="mt-2 p-5 bg-gray-50 rounded-2xl flex flex-col gap-3">
+                        {card.insight_text && (
+                          <p className="text-[18px] text-gray-700 leading-relaxed font-medium">
+                            {card.insight_text}
+                          </p>
                         )}
-                    </div>
-                  )}
+
+                        {card.related_keywords &&
+                          card.related_keywords.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {card.related_keywords.map((kw, i) => (
+                                <span
+                                  key={i}
+                                  className="bg-[#3B8026] border border-gray-200 text-white px-3 py-1.5 rounded-full text-[16px] font-medium shadow-sm"
+                                >
+                                  # {kw.keyword}{" "}
+                                  <span className="text-white">{kw.count}</span>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                      </div>
+                    )}
                 </div>
               );
             })
