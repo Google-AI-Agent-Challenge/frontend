@@ -18,6 +18,7 @@ export default function ReviewPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
 
   useEffect(() => {
     async function init() {
@@ -156,8 +157,9 @@ export default function ReviewPage() {
           products={products}
           isLoading={isLoading}
           onExportExcel={(filtered) => handleExportExcel(filtered)}
+          onProductSelect={(id) => setSelectedProductId(id)}
         />
-        <ReviewAiPanel />
+        <ReviewAiPanel productId={selectedProductId} />
       </div>
     </>
   );
