@@ -39,6 +39,7 @@ yarn-error.log*
 .*
 !.github
 !.dockerignore
+!.env.example
 
 # vercel
 .vercel
